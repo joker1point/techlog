@@ -1,0 +1,135 @@
+---
+title: 'Next.js App Router 性能优化实战'
+date: '2026-05-28'
+tags: ['nextjs', 'performance', 'react', 'frontend']
+draft: false
+summary: '从 Server Components 到 Streaming SSR，一文掌握 Next.js App Router 的核心性能优化策略。'
+---
+
+## Server Components：减少客户端 JavaScript
+
+Next.js App Router 最大的变革是默认使用 Server Components。这意味着：
+
+```tsx
+// 这个组件在服务端渲染，零客户端 JS
+async function BlogList() {
+  const posts = await db.posts.findMany()
+  
+  return (
+    <ul>
+      {posts.map(post => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+### 什么时候用 Client Components？
+
+只有需要交互、状态、或浏览器 API 时才标记 `'use client'`：
+
+```tsx
+'use client'
+
+import { useState } from 'react'
+
+export function SearchBar() {
+  const [query, setQuery] = useState('')
+  
+  return (
+    <input
+      value={query}
+      onChange={e => setQuery(e.target.value)}
+      placeholder="搜索文章..."
+    />
+  )
+}
+```
+
+**关键原则**：把 Client Component 推到叶子节点，让尽可能多的组件留在服务端。
+
+## Streaming SSR：渐进式渲染
+
+使用 `loading.tsx` 和 `Suspense` 实现流式渲染：
+
+```tsx
+// app/blog/loading.tsx
+export default function Loading() {
+  return <BlogSkeleton />
+}
+
+// 精细控制
+import { Suspense } from 'react'
+
+export default function BlogPage() {
+  return (
+    <div>
+      <h1>博客</h1>
+      <Suspense fallback={<BlogSkeleton />}>
+        <BlogList />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+## 图片优化
+
+Next.js Image 组件的优化策略：
+
+```tsx
+import Image from 'next/image'
+
+<Image
+  src="/hero.jpg"
+  alt="Hero"
+  width={1200}
+  height={630}
+  priority  // 首屏图片立即加载
+  placeholder="blur"  // 模糊占位
+  sizes="(max-width: 768px) 100vw, 50vw"
+/>
+```
+
+## 字体优化
+
+```tsx
+import { Inter } from 'next/font/google'
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',  // 避免 FOIT
+})
+```
+
+## 数据获取策略
+
+### 静态生成（推荐博客内容）
+
+```tsx
+// 构建时获取数据
+async function getPosts() {
+  const res = await fetch('https://api.example.com/posts')
+  return res.json()
+}
+```
+
+### 增量静态再生 (ISR)
+
+```tsx
+// 每60秒重新验证
+fetch('https://api.example.com/posts', {
+  next: { revalidate: 60 }
+})
+```
+
+## 性能检查清单
+
+- [ ] Lighthouse 评分 > 90
+- [ ] LCP < 2.5s
+- [ ] CLS < 0.1
+- [ ] 使用 Route Segment Config 控制缓存策略
+- [ ] 启用 Partial Prerendering (PPR)
+- [ ] 图片全部使用 `next/image`
+- [ ] 字体使用 `next/font` 自托管

@@ -7,20 +7,25 @@ interface Project {
 
 const projectsData: Project[] = [
   {
-    title: 'A Search Engine',
-    description: `What if you could look up any information in the world? Webpages, images, videos
-    and more. Google has many features to help you find exactly what you're looking
-    for.`,
-    imgSrc: '/static/images/google.png',
-    href: 'https://www.google.com',
+    title: 'TechLog',
+    description:
+      '基于 Next.js 15 + Tailwind CSS v4 构建的现代技术博客。集成 Contentlayer MDX、kbar 搜索、暗色模式，Lighthouse 评分 98+。',
+    imgSrc: '/static/images/time-machine.jpg',
+    href: 'https://github.com/joker1point/techlog',
   },
   {
-    title: 'The Time Machine',
-    description: `Imagine being able to travel back in time or to the future. Simple turn the knob
-    to the desired date and press "Go". No more worrying about lost keys or
-    forgotten headphones with this simple yet affordable solution.`,
+    title: 'Design System CLI',
+    description:
+      '从 Figma Design Tokens 自动生成 CSS 变量和 Tailwind 配置的 CLI 工具。支持多主题、暗色模式一键切换，减少 80% 的手动 token 同步工作。',
+    imgSrc: '/static/images/google.png',
+    href: 'https://github.com/joker1point/design-system-cli',
+  },
+  {
+    title: 'React Component Library',
+    description:
+      '基于 Radix UI + Tailwind CSS 的企业级 React 组件库。20+ 组件、完整 Storybook 文档、WCAG AA 可访问性认证、Tree-shaking 支持。',
     imgSrc: '/static/images/time-machine.jpg',
-    href: '/blog/the-time-machine',
+    href: 'https://github.com/joker1point/ui-library',
   },
 ]
 

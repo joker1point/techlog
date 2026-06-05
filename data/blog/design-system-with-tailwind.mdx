@@ -1,0 +1,99 @@
+---
+title: '构建现代设计系统：从 Design Tokens 到组件库'
+date: '2026-05-20'
+tags: ['design-system', 'tailwind', 'css', 'frontend']
+draft: false
+summary: '深入探讨如何基于 Design Tokens 方法论，使用 Tailwind CSS 构建可扩展、可维护的现代设计系统。'
+---
+
+## 为什么需要 Design Tokens
+
+Design Tokens 是设计系统的原子单位——它们是存储视觉设计属性的平台无关变量。通过 tokens 来管理颜色、间距、排版、阴影等，可以确保：
+
+- **一致性**：所有组件使用相同的设计决策
+- **可维护性**：一处修改，全局生效
+- **可扩展性**：支持多主题（明暗模式、品牌定制）
+- **跨平台**：同一套 tokens 可用于 Web、iOS、Android
+
+## 设计 Token 的三层架构
+
+### 第一层：基础 Tokens (Primitive Tokens)
+
+基础 tokens 是原始值，不携带语义信息：
+
+```css
+:root {
+  /* 原始色板 */
+  --color-blue-100: oklch(0.932 0.034 265.313);
+  --color-blue-500: oklch(0.585 0.194 277.128);
+  --color-blue-900: oklch(0.305 0.108 292.154);
+  
+  /* 基础间距 */
+  --space-1: 0.25rem;
+  --space-4: 1rem;
+  --space-8: 2rem;
+}
+```
+
+### 第二层：语义 Tokens (Semantic Tokens)
+
+语义 tokens 赋予设计值含义，是使用最多的抽象层：
+
+```css
+:root {
+  --color-primary: var(--color-blue-500);
+  --color-primary-hover: var(--color-blue-600);
+  
+  --color-text-primary: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: var(--color-gray-50);
+}
+```
+
+### 第三层：组件 Tokens (Component Tokens)
+
+组件 tokens 直接应用于具体 UI 元素：
+
+```css
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--space-3) var(--space-6);
+  
+  &:hover {
+    background: var(--color-primary-hover);
+  }
+}
+```
+
+## 暗色模式实现
+
+使用 CSS 自定义属性 + `prefers-color-scheme` 是实现暗色模式最优雅的方式：
+
+```css
+[data-theme="dark"] {
+  --color-primary: var(--color-blue-400);
+  --color-text-primary: var(--color-gray-100);
+  --color-bg-primary: var(--color-gray-950);
+}
+```
+
+## 组件库架构
+
+基于设计 tokens 构建组件库时，遵循以下原则：
+
+1. **单一职责**：每个组件只做一件事
+2. **组合优于配置**：通过组合实现复杂 UI
+3. **可访问性优先**：键盘导航、ARIA 标签、色差对比
+4. **响应式内置**：移动优先的设计策略
+
+## 工具链推荐
+
+- **CSS 框架**: Tailwind CSS v4 + CSS Variables
+- **组件库**: shadcn/ui (基于 Radix UI)
+- **文档**: Storybook
+- **设计工具**: Figma (with Tokens Studio)
+- **代码生成**: Style Dictionary
+
+构建一个好的设计系统是一次投资——前期需要花时间定义 tokens 和组件，但长远来看，它将大幅提升开发效率并保证产品质量的一致性。
