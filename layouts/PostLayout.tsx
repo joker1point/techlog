@@ -27,9 +27,19 @@ interface LayoutProps {
   next?: { path: string; title: string }
   prev?: { path: string; title: string }
   children: ReactNode
+  wordCount?: number
+  readingTime?: number
 }
 
-export default function PostLayout({ content, authorDetails, next, prev, children }: LayoutProps) {
+export default function PostLayout({
+  content,
+  authorDetails,
+  next,
+  prev,
+  children,
+  wordCount,
+  readingTime,
+}: LayoutProps) {
   const { filePath, path, slug, date, title, tags } = content
   const basePath = path.split('/')[0]
 
@@ -49,6 +59,15 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
                     </time>
                   </dd>
                 </div>
+                {wordCount && (
+                  <div>
+                    <dt className="sr-only">Word count</dt>
+                    <dd className="text-sm text-gray-400 dark:text-gray-500">
+                      {wordCount.toLocaleString()} 字
+                      {readingTime && ` · 阅读约 ${readingTime} 分钟`}
+                    </dd>
+                  </div>
+                )}
               </dl>
               <div>
                 <PageTitle>{title}</PageTitle>

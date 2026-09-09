@@ -45,3 +45,10 @@ yarn-error.log*
 
 # Contentlayer
 .contentlayer
+.contentlayer-temp/
+contentlayer.config.js
+
+# build leftovers (renamed .next / out from build troubleshooting)
+.next_*/
+out_*/
+build.log

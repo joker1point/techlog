@@ -21,7 +21,7 @@ export default function Home({ posts }) {
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {!posts.length && 'No posts found.'}
           {posts.slice(0, MAX_DISPLAY).map((post) => {
-            const { slug, date, title, summary, tags } = post
+            const { slug, date, title, summary, tags, featured } = post
             return (
               <li
                 key={slug}
@@ -33,6 +33,20 @@ export default function Home({ posts }) {
                       <dt className="sr-only">Published on</dt>
                       <dd className="text-base leading-6 font-medium text-gray-500 dark:text-gray-400">
                         <time dateTime={date}>{formatDate(date, siteMetadata.locale)}</time>
+                        {(post as { wordCount?: number; readingTime?: { text?: string } })
+                          .wordCount && (
+                          <span className="ml-2 text-sm text-gray-400 dark:text-gray-500">
+                            {((post as { wordCount?: number }).wordCount || 0).toLocaleString()} 字
+                            {((post as { readingTime?: { text?: string } }).readingTime?.text ||
+                              '') &&
+                              ` · ${((post as { readingTime?: { text?: string } }).readingTime as { text: string }).text}`}
+                          </span>
+                        )}
+                        {featured && (
+                          <span className="bg-primary-500 ml-2 inline-block rounded px-2 py-0.5 text-xs font-bold text-white">
+                            置顶
+                          </span>
+                        )}
                       </dd>
                     </dl>
                     <div className="space-y-5 xl:col-span-3">

@@ -118,7 +118,7 @@ export default function ListLayout({
         <ul>
           {!filteredBlogPosts.length && 'No posts found.'}
           {displayPosts.map((post) => {
-            const { path, date, title, summary, tags } = post
+            const { path, date, title, summary, tags, featured } = post
             return (
               <li key={path} className="py-4">
                 <article className="space-y-2 xl:grid xl:grid-cols-4 xl:items-baseline xl:space-y-0">
@@ -126,6 +126,18 @@ export default function ListLayout({
                     <dt className="sr-only">Published on</dt>
                     <dd className="text-base leading-6 font-medium text-gray-500 dark:text-gray-400">
                       <time dateTime={date}>{formatDate(date, siteMetadata.locale)}</time>
+                      {(post as { wordCount?: number; readingTime?: { text?: string } }).wordCount && (
+                        <span className="ml-2 text-sm text-gray-400 dark:text-gray-500">
+                          {((post as { wordCount?: number }).wordCount || 0).toLocaleString()} 字
+                          {((post as { readingTime?: { text?: string } }).readingTime?.text || '') &&
+                            ` · ${((post as { readingTime?: { text?: string } }).readingTime as { text: string }).text}`}
+                        </span>
+                      )}
+                      {featured && (
+                        <span className="bg-primary-500 ml-2 inline-block rounded px-2 py-0.5 text-xs font-bold text-white">
+                          置顶
+                        </span>
+                      )}
                     </dd>
                   </dl>
                   <div className="space-y-3 xl:col-span-3">
