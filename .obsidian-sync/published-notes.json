@@ -1,0 +1,44 @@
+{
+  "_comment": "Obsidian 笔记 -> 博客文章的发布索引，用于去重。发布一篇后必须在此登记，否则会被重复识别为候选。note 为相对 vault 根目录的路径（用 / 分隔）。",
+  "vault": "C:/Users/biren/Documents/Obsidian Vault",
+  "blogDir": "C:/Users/biren/WorkBuddy/2026-06-04-11-30-28/my-tech-blog/data/blog",
+  "published": [
+    {
+      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/如何快速接手一个项目并构建深度项目认知.md",
+      "slug": "onboarding-project-deep-understanding",
+      "date": "2026-09-06"
+    },
+    {
+      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/如何沉淀agent每次的踩坑经验.md",
+      "slug": "agent-lessons-precipitation",
+      "date": "2026-09-06"
+    },
+    {
+      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/我是如何保证我的agentskill多而不乱的？.md",
+      "slug": "agent-skill-governance",
+      "date": "2026-09-06"
+    },
+    {
+      "note": "🌐 互联网产品与商业/agent安全.md",
+      "slug": "agent-prompt-injection-defense",
+      "date": "2026-09-06"
+    },
+    {
+      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/moneyprinterMPT是自动化workflow不是agent.md",
+      "slug": "workflow-vs-agent-7-dimensions",
+      "date": "2026-09-06"
+    },
+    {
+      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/成本治理---计费安全设计.md",
+      "slug": "billing-safety-retry-state-machine",
+      "date": "2026-09-06"
+    }
+  ],
+  "skipped": [
+    {
+      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/token追踪.md",
+      "reason": "内容仅一个 GitHub 链接，信息量不足，暂不适合成文",
+      "date": "2026-09-06"
+    }
+  ]
+}
