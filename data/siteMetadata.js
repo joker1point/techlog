@@ -1,17 +1,17 @@
 /** @type {import("pliny/config").PlinyConfig } */
 const siteMetadata = {
   title: 'TechLog',
-  author: 'designer',
+  author: '眠月',
   headerTitle: 'TechLog',
-  description: 'Thoughts on frontend engineering, UI design systems, and modern web development.',
+  description: 'AI Agent 工程化实践复盘：架构设计、容错与可靠性、上下文工程与成本治理。',
   language: 'zh-cn',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://bab968fc7c504065b909002e0688f9cb.app.codebuddy.work',
+  siteUrl: 'https://techlog-18328.app.workbuddy.host',
   siteRepo: 'https://github.com/joker1point/techlog',
   siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
   mastodon: '',
-  email: '',
+  email: 'birenwenmou@qq.com',
   github: 'https://github.com/joker1point',
   x: '',
   // twitter: '',
