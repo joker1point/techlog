@@ -1,0 +1,165 @@
+---
+title: '给 119k star 项目提 PR：8 小时从评论到合并的完整复盘'
+date: '2026-09-15'
+tags: ['open-source', 'agent', 'python', 'engineering', 'pr']
+draft: false
+summary: '一次向 MoneyPrinterTurbo（119k+ star）提交 OpenAI 兼容文生图素材源并被合并的完整复盘：占坑式沟通拿到约束、用数据回应"改动过大"的顾虑、测试证据链决定合并速度，以及维护者在后续 PR 中指出的付费 API 容错设计缺陷。'
+---
+
+# MoneyPrinterTurbo PR #1291 项目经验总结
+
+> 日期：2026-09-01 | 结果：**PR 已合并**（merge commit `131160f`） feat/openai-image-material-source → harry0703/MoneyPrinterTurbo main
+
+## 一、项目概述
+
+为开源项目 MoneyPrinterTurbo（119k+ star、18k+ fork 的 AI 短视频生成器）新增 **OpenAI 兼容文生图素材源（`openai_image`）**：通过任意 OpenAI 兼容 `/v1/images/generations` 端点（本地 ComfyUI/SD 网关或云端中转），按脚本关键词逐张生成图片并渲染为带放大效果的视频片段。
+
+**最终数据**：21 文件，+1400/−40 行，仅约 40 行触及既有代码；23 个单测；859 全量测试通过；4 次真实端点 e2e；从 Issue 评论到合并耗时约 8 小时。
+
+## 二、成功经验
+
+### 1. 占坑式沟通——先对齐再动手
+
+- 在 Issue #1274 下先评论征求维护者意见，**未写一行代码前**就拿到关键约束："愿意接收 PR，但历史同类 PR 改动范围过大难以合并，需完整测试验证后再提交"
+- 这条约束直接决定了后续所有技术决策的基调（diff 聚焦、测试先行）
+
+### 2. 用数据回应"改动过大"顾虑
+
+- 提交前对比仓库**已合并**的同类 PR：WaveSpeed +1219 行、Seedance +2096 行，本 PR +1400（一半是测试）
+- 关键洞察：维护者说的"范围过大"真实含义是**侵入性**（重写管线），不是行数。本 PR 95% 纯新增，仅 40 行触及既有代码且不改变现有 provider 行为
+
+### 3. 测试证据链决定合并速度
+
+- 维护者 review 第一轮就说"我们在本地跑完了全量测试，并通过本地兼容端点验证了图片生成、落盘和 FFmpeg 渲染链路"——**他复现了我们的验证路径**，这正是快速通过的原因
+- 证据链构成：23 单测（覆盖计费安全/重试/边界）+ 859 全量 + ruff + 4 次真实 e2e（含降级路径）+ local 源回归 + WebUI 浏览器测试
+
+### 4. Review 响应：逐条修复 + 一次到位
+
+维护者 4 条意见全部是真问题，一次 commit 修复完毕：
+
+| 意见 | 修复 |
+| --- | --- |
+| 尺寸直传 1080x1920 被官方 API 400 | 新增 `openai_image_size`，按画幅默认 1024x1536/1536x1024/1024x1024 |
+| POST 超时重试可能重复扣费（原本 WaveSpeed 有相关实现，pr 前看漏了） | 读超时/连接中断视为"未确认"不重试；仅 ConnectTimeout（确定未送达）重试 |
+| 本地网关不需要 API Key | key 允许为空，为空不发 Authorization 头 |
+| 文生视频未实现不要关 #1274 | PR 描述 Closes → Partially addresses |
+
+### 5. 技术设计上的克制
+
+- 拒绝"接 LLM 把关键词改写成英文提示词"（效果好但引入依赖+成本+范围蔓延），改为轻量的 `openai_image_prompt_template` 配置（`{term}` 占位符，+23 行）
+- 图片转视频逻辑复用而非重写：从 `preprocess_video` 抽取 `render_image_zoom_video()` 共用函数
+- 先用 `--video-source local` 手动验证管线可行性，再产品化为 provider
+
+### 6. 后续 PR #1296：遗留边界闭环（200 伪装内容）
+
+- 主 PR 合并时主动在描述中披露了遗留边界，随后开 Issue #1295 + 修复 PR #1296（+48/−1，2 个新单测）当天合并
+- **从一次性贡献者 → 持续贡献者**：8 小时内两个 PR 合并，第二个 PR 从 issue 到合并仅数小时（信任窗口红利）
+
+### 7. 最有价值的一课：维护者在 #1296 上的深化（commit `428dd4e`）
+
+- **我们的缺陷**：修复时 `except Exception` 一把抓——解码失败和落盘失败都走"跳过关键词"。若失败原因是本地环境（磁盘满/权限），循环会为每个关键词继续付费生成→落盘失败→再付费，**所有付费图片全部丢失**
+- **维护者的修复**：新建 `_OpenAIImageDecodeError` 只归入解码失败（远端的错→跳过合理）；`image.save` 刻意留在保护区外（本地的错→异常上抛，任务立即止损）
+- **通用教训（付费 API 容错设计的第二层分类学）**：
+  - 第一层（#1291 review 学到）：按**确认状态**分类重试——未确认不重试防重复扣费
+  - 第二层（#1296 深化学到）：按**错误归属方**分类降级——远端的错跳过继续，本地的错立即止损
+  - `except Exception` 是粒度不足的反面教材：测试能过，但语义边界模糊，付费场景下就是"烧钱循环"和"止损"的区别
+- 面试可讲：被维护者指出的不是 bug 而是设计粒度，说明这类系统的错误处理需要"失败语义建模"思维
+
+### 8. 事实修正：计费安全先例的归属（防止面试翻车）
+
+- **"未确认不重发"不是我们的原创**：WaveSpeed 源的贡献者 ichengzeyi 在 `9a739da`（2026-08-21，早我们十天）已用 `WaveSpeedUnconfirmedTaskError` 完整实现，且选择最保守的"abort 整个任务"
+- **我们的真实增量**（被 review 指出后做的差异化，非照抄）：
+  - 按连接阶段细分超时：ConnectTimeout（确定未送达）可安全重试，读超时（未确认）不重试——WaveSpeed 不做此区分
+  - 降级粒度：跳过关键词继续 vs WaveSpeed 的 abort 全任务。计费论证：不同关键词是独立计费任务，跳过不构成重复扣费
+- **我们的教训**：v1 漏复用了同文件里现成的模式（只学了 WaveSpeed 的按需生成流程，漏了提交策略）——**读参考实现要学到错误处理语义层，不是只抄流程**
+- **一个我们比先例松的点**：提交 5xx 我们退避重试、WaveSpeed 视为未确认 abort（维护者未 flag，属可辩论边界）
+- **面试正确姿势**：讲"知道先例、漏过先例、被指出后消化并做出有理由的偏离"，不讲"首次系统化"（代码可查证，夸大会翻车）
+
+## 三、踩坑记录与解决方案
+
+### 1. Streamlit text_area 必须 Ctrl+Enter 提交
+
+- **现象**：WebUI 填完"视频关键词"点击生成，任务失败在"生成关键词"阶段——关键词输入框值为空，系统转而调用 LLM 生成，撞上额度问题
+- **根因**：Streamlit 的 `st.text_area` 输入后需 **Ctrl+Enter** 提交（普通 Enter 只是换行），页面上的 "Press Ctrl+Enter to apply" 是唯一提示
+- **解决**：浏览器测试工具用 `submit: true`（Enter）无效，改 `press_key("Control+Enter")` 成功
+- **教训**：自动化测试 WebUI 表单时，凡 text_area 都要显式 Ctrl+Enter；用户侧文档/占位符文案最好提示这一点
+
+### 2. GITHUB_TOKEN 环境变量劫持 gh 认证
+
+- **现象**：`gh auth login` 走不下去，提示 "The value of the GITHUB_TOKEN environment variable is being used for authentication"
+- **根因**：环境变量里残留一个**失效的** GITHUB_TOKEN，gh 优先级是环境变量 > keyring 存储
+- **解决**：
+
+```
+Remove-Item Env:\GITHUB_TOKEN -ErrorAction SilentlyContinue
+[Environment]::SetEnvironmentVariable("GITHUB_TOKEN", $null, "User")
+[Environment]::SetEnvironmentVariable("GITHUB_TOKEN", $null, "Machine")
+gh auth login   # 之后 gh auth setup-git 配置 git 凭证
+```
+
+- **教训**：gh 排障第一步永远是 `gh auth status` + 检查 `$env:GITHUB_TOKEN`
+
+### 3. Agnes 文生图端点间歇性 503（队列满）
+
+- **现象**：同一天可用性约 60~70%，请求随机返回 503 queue full
+- **应对**：这反而成为宝贵的测试素材——真实覆盖了 503 退避重试后恢复、重试耗尽跳过关键词后任务仍正常出片两条降级路径
+- **教训**：不稳定上游不是测试的敌人，是降级路径的免费验收；已在模型调用表.md 标注该端点状态
+
+### 4. 千问兼容端点免费额度耗尽
+
+- **现象**：403 `AllocationQuota.FreeTierOnly`，"仅免费模式"开关下无法再生成文案/关键词
+- **教训**：长开发日要预留额度或提前关掉免费模式限制；直接手填文案+关键词可绕过（CLI 的 `--video-script` + `--video-terms`）
+
+### 5. Windows 下 Python 嵌套引号命令
+
+- **现象**：RunCommand 执行 `python -c "..."` 内含引号的临时脚本反复语法错误
+- **解决**：改为写临时 .py 文件执行，或用 PowerShell 的单引号包裹 + `''` 转义
+- **教训**：复杂 Python 代码一律落盘为文件，不要塞 `-c`
+
+### 6. Edit 工具字符串匹配失败（行尾空白）
+
+- **现象**：`Edit` 报 "String to replace not found"，明明代码看起来一样
+- **根因**：目标文件行尾有不可见空白差异
+- **解决**：拆成更小的替换单元；先 Read 精确区域再复制原文
+- **教训**：Edit 前先 Read 目标行，绝不凭记忆构造 old_string
+
+### 7. 测试用 TemporaryDirectory 的作用域陷阱
+
+- **现象**：3 个单测失败——断言文件存在时文件已消失
+- **根因**：`with TemporaryDirectory()` 块结束后目录被删除，而断言写在了 with 块外（或 mock 的回调延迟到块外才落盘）
+- **解决**：改用 `tempfile.mkdtemp()` + `self.addCleanup(shutil.rmtree, ...)`
+- **教训**：测试夹具的生命周期要覆盖全部断言点
+
+### 8. 测试隔离：本地 config.toml 泄漏进单测
+
+- **现象**：新增 prompt_template 用例后，其他用例在开发者本机跑失败、CI 跑过
+- **根因**：`config.app` 是动态 dict，本地 config.toml 里配了 `openai_image_prompt_template`，污染了"默认行为"用例
+- **解决**：setUp 显式 `config.app.pop("openai_image_prompt_template", None)`（后同加 `openai_image_size`）
+- **教训**：项目配置是全局可变的，每个用例都要在 setUp 里清洗相关键
+
+### 9. 首次贡献者 fork PR 的 CI 不自动跑
+
+- **现象**：`gh pr checks` 显示 no checks reported
+- **根因**：GitHub 默认策略，fork PR 的 workflow 需维护者点 "Approve and run"
+- **应对**：不慌，这不是失败；本地已跑过等价命令（pytest + ruff），CI 只是复验
+
+## 四、可复用流程资产
+
+- **SPEC 文档先行**（`SPEC-openai-image-provider.md`）：问题边界、不做什么、成功标准、验证策略全部落纸，review 响应时直接对照
+- **问题边界模板**：核心问题一句话 + 不在范围内的问题 2~3 条（防蔓延）+ 可量化成功标准 + 约束条件
+- **提交前 checklist**：配置文件 key 审计（重复/冲突/泄漏）→ i18n 12 语言 key 一致性 → 代码↔配置↔文案三方拼写一致 → ruff → 全量 pytest → e2e
+- **e2e 命令模板**：`--stop-at materials` 省钱的分阶段调试；`--video-source local` 回归被重构路径
+
+## 五、面试叙事素材
+
+1. **完整链路**：Issue 识别（高价值、无碰撞）→ 占坑沟通拿约束 → 小步实现 → 数据回应规模顾虑 → 快速 review 响应 → 合并
+2. **计费安全设计**：按需生成（累计时长达标即停）、未确认不重试（防重复扣费）、下载失败重试原 URL 不重新生成
+3. **工程判断力**：区分"行数大"与"侵入性大"；拒绝 LLM 提示词改写的范围蔓延诱惑；先 local 手动验证再产品化
+4. **量化结果**：+1400/−40、23 单测、859 全量、8 小时从评论到合并、上游 119k star 项目主线代码
+
+## 六、遗留事项
+
+- #1274 剩余部分（本地文生视频/图生视频）未实现，PR 标注为部分解决
+- Agnes 端点 503 状态已标注在模型调用表.md
+- 8501 端口 WebUI 测试服务如仍在运行需手动停止
+- Fork（joker1point/MoneyPrinterTurbo）建议保留，供后续贡献

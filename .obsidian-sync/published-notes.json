@@ -1,20 +1,20 @@
 {
-  "_comment": "Obsidian 笔记 -> 博客文章的发布索引，用于去重。发布一篇后必须在此登记，否则会被重复识别为候选。note 为相对 vault 根目录的路径（用 / 分隔）。",
+  "_comment": "Obsidian 笔记 -> 博客文章的发布索引，用于去重。发布一篇后必须在此登记，否则会被重复识别为候选。note 为相对 vault 根目录的路径（用 / 分隔）。2026-09-15 修正：vault 重整后 agentcoding经验/ 已移动为 简历沉淀/0agentcoding经验/，全部 note 路径已更新为当前实际路径。",
   "vault": "C:/Users/biren/Documents/Obsidian Vault",
   "blogDir": "C:/Users/biren/WorkBuddy/2026-06-04-11-30-28/my-tech-blog/data/blog",
   "published": [
     {
-      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/如何快速接手一个项目并构建深度项目认知.md",
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/如何快速接手一个项目并构建深度项目认知.md",
       "slug": "onboarding-project-deep-understanding",
       "date": "2026-09-06"
     },
     {
-      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/如何沉淀agent每次的踩坑经验.md",
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/如何沉淀agent每次的踩坑经验.md",
       "slug": "agent-lessons-precipitation",
       "date": "2026-09-06"
     },
     {
-      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/我是如何保证我的agentskill多而不乱的？.md",
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/我是如何保证我的agentskill多而不乱的？.md",
       "slug": "agent-skill-governance",
       "date": "2026-09-06"
     },
@@ -24,21 +24,146 @@
       "date": "2026-09-06"
     },
     {
-      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/moneyprinterMPT是自动化workflow不是agent.md",
+      "note": "🌐 互联网产品与商业/简历沉淀/moneyprinterMPT是自动化workflow不是agent.md",
       "slug": "workflow-vs-agent-7-dimensions",
       "date": "2026-09-06"
     },
     {
-      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/成本治理---计费安全设计.md",
+      "note": "🌐 互联网产品与商业/简历沉淀/成本治理---计费安全设计.md",
       "slug": "billing-safety-retry-state-machine",
       "date": "2026-09-06"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/MoneyPrinterTurbo PR 1291 项目经验总结.md",
+      "slug": "mpt-pr-1291-contribution-review",
+      "date": "2026-09-15"
+    },
+    {
+      "note": "🌐 互联网产品与商业/ai短视频项目架构.md",
+      "slug": "mpt-open-source-contribution-analysis",
+      "date": "2026-09-15"
+    },
+    {
+      "note": "🤖 AI与机器学习/AI基础知识/认识agent.md",
+      "slug": "agent-architecture-evolution-skill-restatement",
+      "date": "2026-09-15"
+    },
+    {
+      "note": "🌐 互联网产品与商业/市场/为什么大批企业升级Agent不会产生增值.md",
+      "slug": "agent-washing-why-no-value",
+      "date": "2026-09-15"
+    },
+    {
+      "note": "🌐 互联网产品与商业/一次对RAG的调研--对rag的系统性思考--体现深度.md",
+      "slug": "rag-vs-agent-retrieval-decision-framework",
+      "date": "2026-09-15"
+    },
+    {
+      "note": "🌐 互联网产品与商业/搭建高可用的agent系统.md",
+      "slug": "agent-fault-tolerance-design",
+      "date": "2026-09-15"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/我的项目开发资产--dev-lessons.md",
+      "slug": "dev-lessons-skill-distillation",
+      "date": "2026-09-15"
     }
   ],
   "skipped": [
     {
-      "note": "🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/token追踪.md",
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/token追踪.md",
       "reason": "内容仅一个 GitHub 链接，信息量不足，暂不适合成文",
       "date": "2026-09-06"
+    },
+    {
+      "note": "🌐 互联网产品与商业/市场/文泓发对agent市场调研.md",
+      "reason": "AI 对话产物的市场数据汇编，全部论据来自外部引用（艾媒/艾瑞/LongPort），无一手实践；数据时效性强，成文价值弱",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/可能方向/未来软件架构--SaaS会变成什么.md",
+      "reason": "趋势科普论述，AI 对话产物，无一手实践",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/0工具箱计划/0agent持续进化工工具箱（实用）.md",
+      "reason": "主体为链接收集，正文不足 300 字",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/0工具箱计划/1工具箱2.md",
+      "reason": "碎片，约 300 字符",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/0工具箱计划/工具箱计划.md",
+      "reason": "公众号营销推文草稿（含工具售卖板块），定位不符",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/作品集.md",
+      "reason": "B站视频学习笔记，纯摘抄，无一手观点",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/资料包计划（备份）.md",
+      "reason": "知识库大纲/目录，非成文内容",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/一次成功的pr经历---顶级--119k.md",
+      "reason": "碎片时间线 + 图片引用，正文不足 300 字（素材已并入 mpt-pr-1291-contribution-review）",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/1各agent测评计划/marvis.md",
+      "reason": "碎片，约 259 字符",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/b站焦虑视频卖资料计划.md",
+      "reason": "碎片，约 70 字符",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/我是如何让agent基于git开发项目.md",
+      "reason": "碎片，约 20 字符",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🌐 互联网产品与商业/简历沉淀/0agentcoding经验/我觉得我的价值在于agent走错路时能及时纠正他.md",
+      "reason": "碎片，约 25 字符",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🤖 AI与机器学习/AI基础知识/agent-memory.md",
+      "reason": "视频笔记逐条摘抄，无一手观点，且内容与已发布的 rag-pipeline-architecture 重叠",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🤖 AI与机器学习/AI基础知识/AI知识体系综合笔记.md",
+      "reason": "AI 生成的知识整合资料，纯摘抄",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🤖 AI与机器学习/AI开发/MCP.md",
+      "reason": "视频笔记摘抄",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🤖 AI与机器学习/AI开发/浏览器AI自动化工作流.md",
+      "reason": "视频笔记摘抄（frontmatter 标注 source: 视频笔记）",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🤖 AI与机器学习/AI新闻评价/2026AI项目汇总/【拉】openclaw：通过让agent接入聊天软件使手机远程控制电脑.md",
+      "reason": "一句话条目，约 95 字符",
+      "date": "2026-09-14"
+    },
+    {
+      "note": "🔐 工具与方法/open agent/ai.md",
+      "reason": "含明文 API Key，禁发",
+      "date": "2026-09-14"
     }
   ]
 }
