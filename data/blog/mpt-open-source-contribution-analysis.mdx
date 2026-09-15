@@ -6,19 +6,9 @@ draft: false
 summary: '以 MoneyPrinterTurbo 为例，按 7 个维度（任务规划、多 Agent 协作、上下文管理、Human-in-the-loop、评估框架、工具路由、Streaming）系统拆解一个陌生项目的架构缺陷，从中筛出 Top 3 贡献方向，并给出方案骨架与给维护者的英文沟通草稿。'
 ---
 
-我来对这个开源项目做系统分析。首先获取项目的基础文件、目录结构和 Issue 列表。
-
-抓取被拦截了，我换个方式获取项目内容，直接读取 GitHub 页面。
-
-已获取基础信息。用户当前浏览的是 MoneyPrinterTurbo 的 Issues 页面，模板中的 `{REPO_URL}` 即此项目。现在我深入抓取架构文档和 Issue 详情。
-
-Core Services 信息已获取。继续抓取任务编排、LLM 集成、多 Provider 架构的详细文档。
-
-已掌握核心流水线架构。继续抓取多 Provider 架构、状态管理和 WebUI 的文档细节。
-
 ### **Top 3 贡献方向：① 任务断点续跑（Checkpoint/Resume）② 官方 MCP Server ③ Issue #1157 批量脚本去重；前两者来自架构分析，第三个是 2~3 天可合入的信任建立型 PR**
 
-当前项目是 harry0703/MoneyPrinterTurbo（10 万+ stars 的 AI 短视频自动生成工具）。我已通过项目的架构文档和 Issue 列表完成分析，以下按你的模板输出完整结论。
+当前项目是 harry0703/MoneyPrinterTurbo（10 万+ stars 的 AI 短视频自动生成工具）。
 
 ---
 

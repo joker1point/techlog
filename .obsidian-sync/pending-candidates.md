@@ -1,7 +1,7 @@
 # 待发布候选清单
 
 > 扫描时间：2026-09-14 ｜ Vault：`C:/Users/biren/Documents/Obsidian Vault`
-> 状态：**等待 designer 确认**。确认前不会生成 .mdx、不会构建、不会部署、不会 git push。
+> ✅ **已处理（2026-09-15）**：7 篇候选已全部发布并部署，`published-notes.json` 已登记（修正 vault 重整后失效的 6 条旧路径 + 补录 18 篇跳过），详见 git 提交 `3df5033`。本文件保留作扫描记录。
 > 正文处理原则：严格保持 designer 原文原意，AI 只补 frontmatter（title/date/tags/summary）与排版结构。
 
 **扫描统计**：命中 Agent 相关笔记 26 篇 → 命中已发布 6 篇 / 已跳过 1 篇 → 逐篇阅读评估 → **本次候选 7 篇**，跳过 18 篇。
