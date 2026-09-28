@@ -6,7 +6,12 @@ const siteMetadata = {
   description: 'AI Agent 工程化实践复盘：架构设计、容错与可靠性、上下文工程与成本治理。',
   language: 'zh-cn',
   theme: 'system', // system, dark or light
-  siteUrl: 'https://techlog-18328.app.workbuddy.host',
+  // 真线上 = GitHub Pages 项目站（仓库无 CNAME → 站点挂在 /techlog 子路径下）。
+  // ⚠️ 必须带 /techlog：sitemap / canonical / og:url / structuredData / RSS
+  // 都是直接拼 `siteUrl + 路径`，少了这层前缀会让所有对外链接 404。
+  // 旧值是 techlog-18328.app.workbuddy.host —— 那是过期预览（文章 404），
+  // canonical 指向它等于把搜索引擎的收录引向死链。
+  siteUrl: 'https://joker1point.github.io/techlog',
   siteRepo: 'https://github.com/joker1point/techlog',
   siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,

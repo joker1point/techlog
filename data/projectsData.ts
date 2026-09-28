@@ -69,6 +69,7 @@ const projectsData: Project[] = [
     links: [
       { label: 'RAG 链路全解析', href: '/blog/rag-pipeline-architecture' },
       { label: 'RAG 选型决策框架', href: '/blog/rag-vs-agent-retrieval-decision-framework' },
+      { label: '分块重构与评测陷阱', href: '/blog/rag-chunking-refactor-and-eval-traps' },
     ],
     imgSrc: '/static/images/projects/vdbnews-home.jpg',
     imgAlt: 'VDB-News 首页：从信源到情报报告的全自动数据管道',
