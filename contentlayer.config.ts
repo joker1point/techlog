@@ -1,6 +1,6 @@
 import { defineDocumentType, ComputedFields, makeSource } from 'contentlayer2/source-files'
 import { writeFileSync } from 'fs'
-import readingTime from 'reading-time'
+import { countWords, readingTime as calcReadingTime } from './lib/wordCount'
 import { slug } from 'github-slugger'
 import path from 'path'
 import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic'
@@ -43,8 +43,22 @@ const icon = fromHtmlIsomorphic(
 )
 
 const computedFields: ComputedFields = {
-  readingTime: { type: 'json', resolve: (doc) => readingTime(doc.body.raw) },
-  wordCount: { type: 'number', resolve: (doc) => readingTime(doc.body.raw).words },
+  // 与文章页（lib/wordCount）统一口径：CJK 按 300 字/分钟、英文按 200 词/分钟；
+  // 之前用 reading-time 包会把中文按"英文单词/200 每分钟"估算，首页出现
+  // "5,210 字 · 27 min read" 这类与文章页数字不一致的中英混杂文案。
+  readingTime: {
+    type: 'json',
+    resolve: (doc) => {
+      const minutes = calcReadingTime(doc.body.raw)
+      return {
+        text: `阅读约 ${minutes} 分钟`,
+        minutes,
+        words: countWords(doc.body.raw),
+        time: minutes * 60 * 1000,
+      }
+    },
+  },
+  wordCount: { type: 'number', resolve: (doc) => countWords(doc.body.raw) },
   slug: {
     type: 'string',
     resolve: (doc) => doc._raw.flattenedPath.replace(/^.+?(\/)/, ''),

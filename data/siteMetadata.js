@@ -59,11 +59,15 @@ const siteMetadata = {
     // Please add your .env file and modify it according to your selection
     // provider: 'buttondown',
   },
+  // ── 评论区（2026-09-28 下线）─────────────────────────────────────────
+  // 此前 provider: 'giscus' 但 CI 里没有配置 NEXT_PUBLIC_GISCUS_* 环境变量，
+  // 线上实际渲染出 repo=undefined 的 giscus iframe：控制台报
+  // "giscus is not installed on this repository"，读者看到的是空白区块。
+  // 需要恢复评论时：到 https://giscus.app 生成 4 个值 → 配到 CI 环境变量
+  // → 把下面 provider 改回 'giscus'（giscusConfig 结构保留未动）。
+  comments: undefined,
+  /*
   comments: {
-    // If you want to use an analytics provider you have to add it to the
-    // content security policy in the `next.config.js` file.
-    // Select a provider and use the environment variables associated to it
-    // https://vercel.com/docs/environment-variables
     provider: 'giscus', // supported providers: giscus, utterances, disqus
     giscusConfig: {
       // Visit the link below, and follow the steps in the 'configuration' section
@@ -89,6 +93,7 @@ const siteMetadata = {
       lang: 'en',
     },
   },
+  */
   search: {
     provider: 'kbar', // kbar or algolia
     kbarConfig: {

@@ -83,9 +83,17 @@
 }
 
 @layer utilities {
+  /* 文章正文：编辑级排版精修（2026-09-28 改版）
+     基线：17px / 行高 1.85 / 段距 1.35em，更贴合中文长文阅读 */
   .prose {
+    font-size: 1.0625rem;
+    line-height: 1.85;
+    letter-spacing: 0.012em;
+
     & a {
       color: var(--color-primary-500);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
       &:hover {
         color: var(--color-primary-600);
       }
@@ -93,21 +101,123 @@
         color: var(--color-primary-400);
       }
     }
+
+    & p {
+      margin-top: 1.35em;
+      margin-bottom: 1.35em;
+    }
+
     & :where(h1, h2) {
       font-weight: 700;
       letter-spacing: var(--tracking-tight);
     }
-    & h3 {
-      font-weight: 600;
+    & h2 {
+      margin-top: 2.2em;
+      margin-bottom: 1em;
+      font-size: 1.5em;
+      line-height: 1.35;
+      text-wrap: balance;
     }
+    & h3 {
+      margin-top: 1.8em;
+      margin-bottom: 0.7em;
+      font-size: 1.22em;
+      line-height: 1.45;
+      font-weight: 600;
+      text-wrap: balance;
+    }
+    & :where(h2, h3) {
+      scroll-margin-top: 6rem;
+    }
+
+    & strong {
+      font-weight: 600;
+      color: var(--color-gray-900);
+    }
+
+    /* 引用块：去掉中文斜体，改「主色竖线 + 浅底」强调块 */
+    & blockquote {
+      margin: 1.8em 0;
+      padding: 0.9em 1.4em;
+      font-style: normal;
+      font-weight: 400;
+      quotes: none;
+      border-left: 3px solid var(--color-primary-500);
+      border-radius: 0 0.375rem 0.375rem 0;
+      background: var(--color-gray-50);
+      color: var(--color-gray-700);
+      & p {
+        margin: 0.4em 0;
+      }
+      & p:first-of-type::before,
+      & p:last-of-type::after {
+        content: none;
+      }
+    }
+
+    /* 行内代码：灰底小圆角，和正文区分 */
     & :where(code):not(pre code) {
-      color: var(--color-indigo-500);
+      color: var(--color-indigo-600);
+      background: var(--color-gray-100);
+      border-radius: 0.375rem;
+      padding: 0.15em 0.4em;
+      font-size: 0.875em;
+      font-weight: 500;
+    }
+
+    /* 代码块：圆角 + 描边（底色由 typography 变量控制） */
+    & pre {
+      border-radius: 0.5rem;
+      padding: 1em 1.15em;
+    }
+
+    /* 表格：表头加重、表体细线、数字等宽 */
+    & table {
+      font-size: 0.95em;
+      font-variant-numeric: tabular-nums;
+    }
+    & thead {
+      border-bottom-width: 2px;
+      border-bottom-color: var(--color-gray-300);
+    }
+    & thead th {
+      padding: 0.55em 0.75em;
+      font-size: 0.92em;
+      letter-spacing: 0.02em;
+      color: var(--color-gray-700);
+    }
+    & tbody td {
+      padding: 0.7em 0.75em;
+    }
+    & tbody tr {
+      border-bottom-color: var(--color-gray-100);
+    }
+
+    & ul > li::marker,
+    & ol > li::marker {
+      color: var(--color-gray-400);
+    }
+    & hr {
+      margin: 3em 0;
+      border-color: var(--color-gray-200);
+    }
+    & img {
+      border-radius: 0.5rem;
     }
   }
 
-  .prose-invert {
+  /* 深色覆盖：注意不能用 `.prose-invert` 选择器！
+     HTML 里字面类名是 Tailwind 变体 `dark:prose-invert`（classList 中
+     没有 `prose-invert` 这个类），`.prose-invert {}` 规则永远不会命中；
+     用 `.dark .prose`（html 上有 .dark）既稳定命中、特异性又高于上面
+     的 `.prose` 块，不必依赖源顺序。 */
+  .dark .prose {
+    /* 代码块面色比页面底色亮一档，避免深色下糊在一起 */
+    --tw-prose-invert-pre-bg: oklch(0.21 0.024 262);
     & a {
       color: var(--color-primary-500);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
       &:hover {
         color: var(--color-primary-400);
       }
@@ -117,6 +227,37 @@
     }
     & :where(h1, h2, h3, h4, h5, h6) {
       color: var(--color-gray-100);
+    }
+    & strong {
+      color: var(--color-gray-100);
+    }
+    & blockquote {
+      background: oklch(0.19 0.02 262);
+      color: var(--color-gray-300);
+      border-left-color: var(--color-primary-400);
+    }
+    & :where(code):not(pre code) {
+      color: var(--color-primary-300);
+      background: oklch(0.22 0.024 262);
+    }
+    & pre {
+      border: 1px solid oklch(0.29 0.028 262);
+    }
+    & thead {
+      border-bottom-color: var(--color-gray-600);
+    }
+    & thead th {
+      color: var(--color-gray-300);
+    }
+    & tbody tr {
+      border-bottom-color: var(--color-gray-800);
+    }
+    & ul > li::marker,
+    & ol > li::marker {
+      color: var(--color-gray-500);
+    }
+    & hr {
+      border-color: var(--color-gray-700);
     }
   }
 }
@@ -176,4 +317,34 @@ input:-webkit-autofill:focus {
 .linkicon {
   display: inline-block;
   vertical-align: middle;
+}
+
+/* ===== 代码块外壳：语言标签条（2026-09-28 改版）=====
+   外壳底 = --tw-prose-pre-bg（typography 变量，浅色 slate-800 / 深色自定义面色），
+   整体只保留一个圆角与一层描边，内部 pre 的 margin / 圆角 / 边框归零。 */
+.code-block {
+  margin: 1.7em 0;
+  border-radius: 0.5rem;
+  background: var(--tw-prose-pre-bg);
+  overflow: hidden;
+  border: 1px solid var(--color-gray-700);
+}
+
+.code-block-lang {
+  display: block;
+  padding: 0.35rem 1.15rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gray-400);
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* 特异性要高过 `.dark .prose pre` 的描边规则（同为 0,2,1，靠源顺序取胜） */
+.prose .code-block pre {
+  margin: 0;
+  border-radius: 0;
+  border: none;
 }

@@ -28,7 +28,8 @@ function nodeText(node: ReactNode): string {
 /**
  * 代码块渲染：
  * - ```mermaid 代码块 → 客户端渲染成流程图（Mermaid 组件懒加载）
- * - 其余代码块维持原有 Pre 行为（复制按钮、高亮等）
+ * - 其余代码块维持原有 Pre 行为（复制按钮、高亮等），带语言标签的
+ *   包一层外壳，把语言显示在代码块顶部条上（编辑级细节）
  */
 function MdxPre(props: { children?: ReactNode }) {
   const first = Children.toArray(props.children)[0]
@@ -37,6 +38,15 @@ function MdxPre(props: { children?: ReactNode }) {
     const className = codeProps?.className ?? ''
     if (className.includes('language-mermaid')) {
       return <Mermaid chart={nodeText(codeProps?.children).replace(/\s+$/, '')} />
+    }
+    const lang = className.match(/language-([\w-]+)/)?.[1]
+    if (lang) {
+      return (
+        <div className="code-block">
+          <div className="code-block-lang">{lang}</div>
+          <Pre {...(props as React.ComponentProps<typeof Pre>)} />
+        </div>
+      )
     }
   }
   return <Pre {...(props as React.ComponentProps<typeof Pre>)} />
