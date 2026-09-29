@@ -1,129 +1,118 @@
 # 待发布候选清单
 
-> 扫描时间：2026-09-14 ｜ Vault：`C:/Users/biren/Documents/Obsidian Vault`
-> ✅ **已处理（2026-09-15）**：7 篇候选已全部发布并部署，`published-notes.json` 已登记（修正 vault 重整后失效的 6 条旧路径 + 补录 18 篇跳过），详见 git 提交 `3df5033`。本文件保留作扫描记录。
+> 扫描时间：2026-09-28 09:0x（每周一自动扫描）｜ Vault：`C:/Users/biren/Documents/Obsidian Vault`
+> 状态：⏸ **等待 designer 确认，未发布**（未生成 mdx / 未构建 / 未部署 / 未 git push）
+> 去重依据：`published-notes.json` 的 published(13) + skipped(19)，**按文件名去重**（vault 目录又重整了，见文末「⚠️ 新发现」）
 > 正文处理原则：严格保持 designer 原文原意，AI 只补 frontmatter（title/date/tags/summary）与排版结构。
 
-**扫描统计**：命中 Agent 相关笔记 26 篇 → 命中已发布 6 篇 / 已跳过 1 篇 → 逐篇阅读评估 → **本次候选 7 篇**，跳过 18 篇。
+**扫描统计**：vault 共 320 篇 md → 关键词/路径命中 Agent 相关 26 篇 → 排除已发布 13 + 已跳过 19 → 逐篇阅读评估 → **本次候选 7 篇 + 待定 1 篇**，跳过 14 篇。
 
-> ⚠️ **与上一轮（2026-09-09）扫描的关系**：上一轮推荐过 6 篇，但 designer 未确认、一篇都未发布。本轮重新独立评估，其中 3 篇重合（为什么大批企业升级Agent / 搭建高可用的agent系统 / 认识agent），**2 篇本轮改判为跳过**（见文末「与上一轮评估的分歧」），1 篇（作品集）本轮同样判跳过。新发现 4 篇候选。
-
----
-
-## ⚠️ 扫描中发现的安全问题（与候选无关，但建议尽快处理）
-
-`🔐 工具与方法/open agent/ai.md` 中**明文存放了一个 OpenAI API Key**（`sk-proj-...`）。该笔记已判为跳过、不会发布，但建议 designer 尽快到 OpenAI 后台 **rotate/revoke 该密钥**并删除明文。
+> 上一轮（2026-09-14）的 7 篇候选已于 2026-09-15 全部发布并登记，本轮不重复推荐。
 
 ---
 
-## 候选（7 篇，按推荐度排序）
+## 一、推荐发布候选（7 篇）
 
-### 1. ⭐⭐⭐ MoneyPrinterTurbo PR #1291 项目经验总结
+### 1. ⭐⭐⭐ flowwatch · 只读 Agent 的工程化
+- **笔记路径**：`🌐 互联网产品与商业/0简历沉淀/flowwatch/flowwatch · 项目文档.md`
+- **拟定 title**：`只读 Agent 怎么落地：证据纪律四层、隐私物理分档与只读承诺的三层验证`
+- **拟定 slug**：`readonly-agent-engineering-flowwatch`
+- **拟定 tags**：`['agent', 'engineering', 'security', 'evaluation', 'architecture']`
+- **拟定 summary**：给本机流量观测工具装一个只读 Agent 后踩到的真实问题：模型零工具调用却编出「我查过了」的结论、隐私只能靠提示词承诺。四层证据防线、聚合档/明细档的物理隔离，以及用 AST 调用图 + 运行时 audit hook + 变异测试证明「只读」不是口号。
+- **推荐理由**：vault 里 Agent 工程含量最高的一篇——不是概念复述，是「09-20 真实事故 → 四层防线 → 可被第三方核对的验证」的完整闭环；「能力不可得 > 运行时拦截」和「ETW 净收益 0.0 KiB 仍照写」两条工程诚实度判断，正是博客主线缺的那一类一手材料。
 
-- **笔记路径**：`🌐 互联网产品与商业/简历沉淀/MoneyPrinterTurbo PR 1291 项目经验总结.md`
-- **拟定 title**：给 119k star 项目提 PR：8 小时从评论到合并的完整复盘
-- **拟定 slug**：`mpt-pr-1291-contribution-review`
-- **拟定 tags**：`['开源贡献', 'Agent', 'Python', '工程实践']`
-- **拟定 summary**：一次向 MoneyPrinterTurbo（119k+ star）提交 OpenAI 兼容文生图素材源并被合并的完整复盘：占坑式沟通拿到约束、用数据回应"改动过大"的顾虑、测试证据链决定合并速度，以及维护者在后续 PR 中指出的付费 API 容错设计缺陷。
-- **推荐理由**：全程一手实践，量化结果扎实（+1400/−40、23 单测、859 全量测试、8 小时从评论到合并），并提炼出可复用方法论——「未确认不重试」防重复扣费、「按错误归属方分类降级」及时止损、`except Exception` 在付费场景下的粒度陷阱。本轮最出彩的一篇。
+### 2. ⭐⭐⭐ 先审计测量，再优化模型（RAGAS 生成层评估复盘）
+- **笔记路径**：`🌐 互联网产品与商业/0简历沉淀/VDB-News/VDB-News · 生成层评估与测量修正.md`
+- **拟定 title**：`我的评测口径骗了我自己：RAGAS 生成层评估的一次测量修正`
+- **拟定 slug**：`ragas-evaluation-measurement-audit`
+- **拟定 tags**：`['rag', 'evaluation', 'ragas', 'engineering', 'llm']`
+- **拟定 summary**：341 条陈述里 24.3% 被判「无依据」，逐条看完发现大部分是我自己的口径问题——裁判看到的是剥掉 `[资料N]` 头的裸文本，而模型看到的是带来源/标题/日期的上下文。修正后 Faithfulness 从 0.716 涨到 0.907，「未达标」这个前提本身就是测量假象。
+- **推荐理由**：「先审计测量，再优化模型」是可迁移的方法论，踩坑极具体（ragas 0.4.3 三个坑、单题判分噪声 ±0.2~0.9、自实现指标系统性偏乐观已被证伪）；还给出了「rerank 实测 +0.047 但延迟 +44%，所以默认关闭」这类有数字支撑的取舍判断。
 
-### 2. ⭐⭐⭐ 如何给一个陌生开源项目做架构分析并找到贡献点
+### 3. ⭐⭐ agent-skill-framework · 把「技能有没有用」变成可测量
+- **笔记路径**：`🌐 互联网产品与商业/0简历沉淀/agent-skill-framework/agent-skill-framework · 项目文档.md`
+- **拟定 title**：`Skill 越加越多，怎么证明它真的有用：with/without 对照评估`
+- **拟定 slug**：`agent-skill-framework-with-without-benchmark`
+- **拟定 tags**：`['agent', 'skill', 'evaluation', 'context', 'engineering']`
+- **拟定 summary**：Agent 的 Skill 加了不知道有没有用、删了不知道会不会变差——用真实 LLM 跑 with_skill vs without_skill 对照，把「看起来能用」变成「验证过能用」，并用假阳性/假阴性统计自动改写技能描述。
+- **推荐理由**：与已发布的《我是如何保证我的 agentskill 多而不乱的？》是同一问题的两层（整体可治理 vs 个体可验证），能形成系列；「单看加了技能后通过率 80% 没有意义，必须回答不加是多少」是全文最锋利的一句。
 
-- **笔记路径**：`🌐 互联网产品与商业/ai短视频项目架构.md`
-- **拟定 title**：如何给一个陌生开源项目做架构分析，并找到能合进去的贡献点
-- **拟定 slug**：`mpt-open-source-contribution-analysis`
-- **拟定 tags**：`['开源贡献', 'Agent', '架构分析', 'Python']`
-- **拟定 summary**：以 MoneyPrinterTurbo 为例，按 7 个维度（任务规划、多 Agent 协作、上下文管理、Human-in-the-loop、评估框架、工具路由、Streaming）系统拆解一个陌生项目的架构缺陷，从中筛出 Top 3 贡献方向，并给出方案骨架与给维护者的英文沟通草稿。
-- **推荐理由**：一套完整可复用的「开源项目解剖 → 贡献点排序 → 方案对比 → 社区沟通」方法论，含面试叙事角度。注意：正文开头几行是 AI 的过程性絮语（"我来对这个开源项目做系统分析…"），发布时建议裁掉。
+### 4. ⭐⭐ LLM 输出的两个工程化 Guard：输出契约与编造校验
+- **笔记路径**：`🌐 互联网产品与商业/0简历沉淀/viral-content-analysis/viral-content-analysis · 项目文档.md`
+- **拟定 title**：`LLM 输出出问题时先找根因：输出契约缺失与时间表述归一化校验`
+- **拟定 slug**：`llm-output-contract-and-factuality-guard`
+- **拟定 tags**：`['llm', 'prompt', 'engineering', 'testing', 'ai']`
+- **拟定 summary**：90 条内容分析跑完，9 个字段只有 1 个有值——根因不是 prompt 措辞，是提示词压根没描述输出契约；修完 Top1 从 57 涨到 71.3。另一条是防编造：「老洋楼」被写成「百年老洋楼」，用时间表述归一化比对原文拦截，10 用例零误报零漏报。
+- **推荐理由**：两个都是「给模型输出加断言、而不是信模型」的可复用手法，都有修复前后的量化对比；附带的「并发槽占满与配额耗尽都返回 429 但处理相反」是与已发布计费安全篇互补的新例子。
 
-### 3. ⭐⭐⭐ Agent 架构演进：Skill 压平 Sub Agent，Restatement 又把它拉回来
+### 5. ⭐⭐ Agent 的记忆与个性化：为什么兴趣分只重排不改写 query
+- **笔记路径**：`🌐 互联网产品与商业/0简历沉淀/VDB-News/VDB-News · 记忆与个性化.md`
+- **拟定 title**：`Agent 记忆三层与兴趣画像：显式可淘汰，隐式只加分`
+- **拟定 slug**：`agent-memory-and-personalization-design`
+- **拟定 tags**：`['agent', 'memory', 'rag', 'architecture', 'engineering']`
+- **拟定 summary**：L1 对话记忆 / L3 向量记忆 / L4 兴趣画像的真实实现与参数，以及一条关键约束：兴趣分只参与重排（约 0.8 权重、可被语义翻盘），不改写检索 query——避免「越用越窄」的回声室。文末附诚实清单（L2 只有文案没有代码）。
+- **推荐理由**：记忆是博客主线里还没覆盖的一块；「显式可淘汰、隐式只加分」的权重设计原则可迁移，而主动承认「landing 上写的四层记忆有一层没实现」这种口径诚实，是这篇最值得发的部分。
 
-- **笔记路径**：`🤖 AI与机器学习/AI基础知识/认识agent.md`
-- **拟定 title**：我的 Agent 架构演进：Skill 压平 Sub Agent，Restatement 又把它拉了回来
-- **拟定 slug**：`agent-architecture-evolution-skill-restatement`
-- **拟定 tags**：`['Agent', 'AI', '架构', '上下文工程']`
-- **拟定 summary**：从初代「主 Agent 编排 + 子 Agent 分工」三层架构，到用 Skill 替代冗余 Sub Agent 压平架构降低 Token，再到长任务中撞上步骤合并跳过、规则失效、输出同质化，最终靠 Restatement 机制与 Sub Agent 回归分头解决——一条完整的踩坑迭代链。
-- **推荐理由**：有明确独立观点（subagent 本质是并发；skill 本质是提示词的按需注入；注意力集中在系统提示词与新上下文两处），是真实踩坑而非概念科普。篇幅约 1200 字偏短，发布时建议适当展开。
+### 6. ⭐ TechLog 自建博客的四个坑
+- **笔记路径**：`🌐 互联网产品与商业/0简历沉淀/TechLog/TechLog · 项目文档.md`
+- **拟定 title**：`自建 Next.js 静态博客踩的四个坑：clean URL、Mermaid、Pages CI 与构建环境`
+- **拟定 slug**：`nextjs-static-blog-four-pitfalls`
+- **拟定 tags**：`['nextjs', 'engineering', 'deploy', 'blog']`
+- **拟定 summary**：静态托管不做 `/about → about.html` 补全导致路由 404、Mermaid 渲染成一堆代码文本（含 rehype-prism-plus 把源码拆成 span 的坑）、GitHub Pages CI 一直失败的根因是仓库压根没启用 Pages、以及 IDE 注入的 NODE_OPTIONS 让本地构建失败。
+- **推荐理由**：四个坑都是「现象 → 根因 → 解法」，属于可直接复用的一手经验；元内容（讲这个博客本身怎么建的）与站点调性相符。
 
-### 4. ⭐⭐ 为什么大批企业升级 Agent 不会产生增值
-
-- **笔记路径**：`🌐 互联网产品与商业/市场/为什么大批企业升级Agent不会产生增值.md`
-- **拟定 title**：Agent Washing：为什么大批企业升级 Agent 不会产生增值
-- **拟定 slug**：`agent-washing-why-no-value`
-- **拟定 tags**：`['Agent', 'AI', '产品', '行业观察']`
-- **拟定 summary**：Agent 有明确适用边界——擅长非结构化输入、路径不固定、需动态推理的任务。把确定流程强行套上自主智能是技术错配；中小企业缺数据/SOP/权限/复合人才配套地基；管理层"替换人"的预期错位（实际只能替换重复与信息整理类子集工作）。
-- **推荐理由**：观点鲜明、结构完整（技术错配 / 地基缺失 / 预期错位 / 岗位两极分化 / 连锁现象），对「哪些业务该上 Agent」给出可操作判断口径。与已发布的 `workflow-vs-agent-7-dimensions` 是同一主题的两面，可成系列。
-
-### 5. ⭐⭐ RAG 还必要吗：从 130 条技术评论里提炼的决策框架
-
-- **笔记路径**：`🌐 互联网产品与商业/一次对RAG的调研--对rag的系统性思考--体现深度.md`
-- **拟定 title**：RAG 还必要吗：从 130 条技术评论里提炼出的选型决策框架
-- **拟定 slug**：`rag-vs-agent-retrieval-decision-framework`
-- **拟定 tags**：`['RAG', 'Agent', 'AI', '调研']`
-- **拟定 summary**：围绕「向量 RAG vs LLM Wiki + grep / Agent 自主检索」的四派立场梳理（谨慎派、混合派、场景决定论派、演进视角派）、四个辩论冲突点，以及一组可直接落地的决策框架：按更新频率、查询频率、数据规模、领域特性决定上不上 RAG。
-- **推荐理由**：不是简单罗列观点，而是做了结构化加工——提炼决策框架、指出各派的逻辑疑点与举证不对称，有独立判断。末尾「小数据规模自建 RAG 可能 token 与召回率双输」尤其有信息量。
-
-### 6. ⭐⭐ Agent 健壮性设计：工具与模型调用失败的容错与兜底
-
-- **笔记路径**：`🌐 互联网产品与商业/搭建高可用的agent系统.md`
-- **拟定 title**：Agent 健壮性设计：工具调用与模型调用失败的容错与兜底
-- **拟定 slug**：`agent-fault-tolerance-design`
-- **拟定 tags**：`['Agent', 'AI', '高可用', '系统设计']`
-- **拟定 summary**：错误分类（确定性 vs 瞬时）→ 确定性错误回传模型自我修复、瞬时错误指数退避+随机抖动重试 → 多次失败熔断 → 按能力等级优雅降级（备用工具 / 业务降级 / 转人工）。模型侧另需识别「API 返回成功但业务结果错误」的潜在失败，并在切换备用模型后持续评估。
-- **推荐理由**：来自真实面试场景（宇树科技、英伟达一面），方法论完整且有两个差异化加分点（潜在失败靠业务指标监控；切备用模型后仍需降级适配）。注意：与已发布的 `billing-safety-retry-state-machine` 在「重试」主题上有部分重叠，建议本篇聚焦全链路容错与降级，略写计费细节。
-
-### 7. ⭐ 把 22 篇项目文档蒸馏成一个可进化的全局技能
-
-- **笔记路径**：`🌐 互联网产品与商业/简历沉淀/我的项目开发资产--dev-lessons.md`
-- **拟定 title**：把 22 篇项目文档蒸馏成一个可进化的全局技能
-- **拟定 slug**：`dev-lessons-skill-distillation`
-- **拟定 tags**：`['Agent', 'Skill', '工程实践', '知识管理']`
-- **拟定 summary**：将 22 篇原始复盘文档蒸馏为全局技能 dev-lessons：按领域分文件（LLM 应用、前后端异步、数据库迁移、上游复用、部署环境、协作测试），每条经验附场景标签与溯源字段，并内置进化协议（同问题复现三次升级为元原则、元原则超 15 条强制合并）。
-- **推荐理由**：一手实践 + 完整方法论，尤其「溯源字段」与「强制合并防资产腐烂」两点可直接照搬。篇幅最短（约 800 字），建议与已发布的 `agent-skill-governance` 关联引用后发布。
+### 7. ⭐ portwatch · 一个 4476ms → 73ms 的性能陷阱（非 Agent 主线，备选）
+- **笔记路径**：`🌐 互联网产品与商业/0简历沉淀/portwatch/portwatch · 项目文档.md`
+- **拟定 title**：`Windows 上 psutil.ppid() 的性能陷阱：4476ms 到 73ms`
+- **拟定 slug**：`psutil-ppid-windows-performance-pitfall`
+- **拟定 tags**：`['python', 'performance', 'windows', 'engineering']`
+- **拟定 summary**：采集器对上百个 PID 取父进程，Windows 上 `psutil.Process.ppid()` 每次调用都重建全量进程快照（约 45ms/次），110 次把整轮采集拖到 4476ms。改用 `psutil._pswindows.ppid_map()` 一次拿全表 + 保留兜底分支后降到 73ms。
+- **推荐理由**：不在 Agent 主线上，但「现象 → 量化 → 根因（代价与系统进程数成正比而非查询数）→ 解法 + 兜底」是标准的五段式性能优化复盘，且是 Windows 专属坑、网上少见。放备选，看你要不要扩主线。
 
 ---
 
-## 与上一轮（2026-09-09）评估的分歧
+## 二、待你定夺（1 篇：与已发布内容高度重叠）
 
-上一轮推荐、本轮改判**跳过**的 2 篇，请 designer 定夺（若要发，说一声即可补回）：
-
-| 笔记 | 上一轮 | 本轮判定 | 本轮跳过理由 |
-|---|---|---|---|
-| `🌐 互联网产品与商业/市场/文泓发对agent市场调研.md` | 推荐发布（#2） | 跳过 | 通篇为 AI 对话产物的市场数据汇编，全部论据来自外部引用（艾媒、艾瑞、LongPort 等），无 designer 一手实践或独立验证。数据时效性也强，成文价值弱 |
-| `🤖 AI与机器学习/AI基础知识/agent-memory.md` | 推荐发布（#4） | 跳过 | 视频笔记逐条摘抄（bullet 罗列 + 一个失效的本地 file:// 链接），无一手观点，且内容与已发布的 `rag-pipeline-architecture` 重叠 |
+### A. MoneyPrinterTurbo 双 PR 叙事定稿 v3
+- **笔记路径**：`🌐 互联网产品与商业/0简历沉淀/为 MoneyPrinterTurbo 实现 OpenAI 兼容文生图素材源（含两次 PR 合并）.md`
+- **冲突**：已发布 `mpt-pr-1291-contribution-review.mdx`（《给 119k star 项目提 PR：8 小时从评论到合并的完整复盘》）覆盖了同一段经历。
+- **新内容只有两处**：① **PR #1296**（200 响应 body 非图片导致任务中断）的闭环，以及维护者在你的修复上继续深化（区分远端解码失败 vs 本地写入失败）；② 由此提炼的**失败语义建模二维分类**（确认状态 → 能否重试；错误归属方 → 降级还是止损）。
+- **建议**：**不要整篇重发**。要发就只写第 ② 点的独立短文（slug 建议 `paid-api-failure-semantics-two-dimensions`），把已发布那篇当背景链接。你说了算。
 
 ---
 
-## 已判定跳过（登记以免重复推荐）
+## 三、本轮判定跳过（14 篇，附理由）
 
-| 笔记 | 跳过原因 |
+| 笔记 | 判定理由 |
 |---|---|
-| 🌐 互联网产品与商业/市场/文泓发对agent市场调研.md | 见上方分歧表 |
-| 🌐 互联网产品与商业/可能方向/未来软件架构--SaaS会变成什么.md | 趋势科普论述，AI 对话产物，无一手实践 |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/0工具箱计划/0agent持续进化工工具箱（实用）.md | 主体为链接收集，正文不足 300 字 |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/0工具箱计划/1工具箱2.md | 碎片，300 字符 |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/0工具箱计划/工具箱计划.md | 公众号营销推文草稿（含 20 元工具箱售卖板块），定位不符 |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/作品集.md | B站视频学习笔记，纯摘抄 |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/资料包计划（备份）.md | 知识库大纲/目录，非成文内容 |
-| 🌐 互联网产品与商业/简历沉淀/一次成功的pr经历---顶级--119k.md | 碎片时间线 + 图片引用，正文不足 300 字（素材已并入候选 #1） |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/1各agent测评计划/marvis.md | 碎片，259 字符 |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/b站焦虑视频卖资料计划.md | 碎片，70 字符 |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/我是如何让agent基于git开发项目.md | 碎片，20 字符 |
-| 🌐 互联网产品与商业/简历沉淀/0agentcoding经验/我觉得我的价值在于agent走错路时能及时纠正他.md | 碎片，25 字符 |
-| 🤖 AI与机器学习/AI基础知识/agent-memory.md | 见上方分歧表 |
-| 🤖 AI与机器学习/AI基础知识/AI知识体系综合笔记.md | AI 生成的知识整合资料，纯摘抄 |
-| 🤖 AI与机器学习/AI开发/MCP.md | 视频笔记摘抄 |
-| 🤖 AI与机器学习/AI开发/浏览器AI自动化工作流.md | 视频笔记摘抄（frontmatter 标注 source: 视频笔记） |
-| 🤖 AI与机器学习/AI新闻评价/2026AI项目汇总/【拉】openclaw…远程控制电脑.md | 一句话条目，95 字符 |
-| 🔐 工具与方法/open agent/ai.md | 含明文 API Key，禁发（见顶部安全问题） |
+| `0简历沉淀/0agentcoding经验/1codex上下文压缩.md` | 视频字幕整理稿（开头即「已读取完整字幕 21:42 全长」），AI 生成的结构化学习笔记，无一手实践 |
+| `🤖 AI与机器学习/AI基础知识/问题与解答.md` | AI 对话产物（结尾「要不要我继续帮你解释 Day1 第 5 题」），纯概念问答 |
+| `0简历沉淀/2RAG/8. 什么是向量数据库？…md` | 小林coding 面试题栏目摘抄（含 cdn.xiaolincoding.com 图 + 公众号推广） |
+| `0简历沉淀/2RAG/18_怎么量化你的RAG效果.md` | 同上，小林coding 摘抄；与候选 2 的一手实测重复但更浅 |
+| `0简历沉淀/0agentcoding经验/作品集上的描述会诱导面试官问哪些问题？…md` | 面试备考清单（勾选框 + 口径提醒），定位私人；**但附录 C/D/E/F/H/I/J 含 VDB-News 一手实测数据**，建议后续拆条使用而非整篇发 |
+| `0简历沉淀/9-17与dify后端适配度.md` | AI 对话产物 + 求职/JD 匹配分析，含私人求职策略 |
+| `已确立方向pr/pr前情提要.md` | 提示词模板（含 `{REPO_URL}` 占位符），非成文内容 |
+| `0简历沉淀/为什么不继续提第三个pr.md` | AI 对话产物（结尾「你倾向哪个」），仅末尾一句你的结论 |
+| `0简历沉淀/插件系统 基于 registry.py…md` | AI 对话产物，讲 Python 装饰器注册机制，与项目主线无关 |
+| `0简历沉淀/agent.md` | 约 170 字碎片，Function Calling 概念片段 |
+| `0简历沉淀/flowwatch/flowwatch · 面试模拟题.md` | Q&A 题库（面试素材），非文章体裁；内容已并入候选 1 |
+| `0简历沉淀/agent-skill-framework/agent-skill-framework · 面试模拟题.md` | 同上，已并入候选 3 |
+| 各项目其余「· 面试模拟题」（VDB-News / portwatch / CharacterSeed / TechLog / MoneyPrinterTurbo-PR / viral-content-analysis） | 同上，统一作为发布素材而非候选 |
+| `0简历沉淀/MoneyPrinterTurbo-PR/`、`0简历沉淀/119kAI生成短视频/` 下两份 MPT 文档 | 与已发布 `mpt-pr-1291-contribution-review` / `mpt-open-source-contribution-analysis` 重复 |
 
 ---
 
-## 备注：去重索引路径已失效
+## ⚠️ 新发现（需要你留意）
 
-`published-notes.json` 中 6 篇已发布笔记记录的 `note` 路径，在 vault 重整后已全部失效：
+1. **Vault 目录又重整了**：`简历沉淀/` → `0简历沉淀/`。`published-notes.json` 里 6 条 `note` 路径**再次失效**（2026-09-15 才修过一次）。本轮已改为按文件名去重，但下轮还会踩。**要不要把索引主键改成文件名？**
+2. **发布索引可能不全**：`data/blog/` 有 26 篇 mdx，索引只登记 13 篇。其中 `memory-guard-last-line-of-defense`、`agent-window-period`、`focus-on-firstline-practice`、`ide-agent-vs-ai-assistant` 看着像 Obsidian 来源却没登记——若确实来自 vault，需补登记，否则会被重复推荐。
+3. **安全隐患仍在**：`🔐 工具与方法/open agent/ai.md` 含明文 OpenAI API Key（sk-proj-…），永久禁发，已在 skipped 中。建议尽快轮换。
 
-- 原：`🌐 互联网产品与商业/产品发布顺序须知/简历沉淀/agentcoding经验/…`
-- 现：`🌐 互联网产品与商业/简历沉淀/0agentcoding经验/…`
+---
 
-本轮按**文件名**做了去重。建议在 designer 确认发布时，一并修正 `published-notes.json` 中的 `note` 路径为当前实际路径，否则下次扫描靠路径去重会全部失效。
+## 下一步（等你发话）
+
+你说「发」之后我再执行：
+生成 mdx（正文保持你原文原意，只补 frontmatter 与排版）→ PowerShell 前台构建（`EXPORT=true`、`CODEBUDDY_SAFE_DELETE_ENABLED=0`）→ sites_deploy 部署 → git push 备份 → 在 `published-notes.json` 登记防重复。
+
+请告诉我：上面 7 篇候选里**要发哪几篇**（说编号即可），以及待定那篇要不要按建议改成短文。
