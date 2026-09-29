@@ -51,6 +51,7 @@ export default async function TagPage(props: { params: Promise<{ tag: string; pa
       initialDisplayPosts={initialDisplayPosts}
       pagination={pagination}
       title={title}
+      totalPosts={allBlogs.length}
     />
   )
 }

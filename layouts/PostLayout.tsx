@@ -1,10 +1,10 @@
 import { ReactNode } from 'react'
 import { CoreContent } from 'pliny/utils/contentlayer'
 import type { Blog, Authors } from 'contentlayer/generated'
-import { slug as slugify } from 'github-slugger'
 import Comments from '@/components/Comments'
 import Link from '@/components/Link'
 import SectionContainer from '@/components/SectionContainer'
+import Tag from '@/components/Tag'
 import Image from '@/components/Image'
 import siteMetadata from '@/data/siteMetadata'
 import ScrollTopAndComment from '@/components/ScrollTopAndComment'
@@ -57,7 +57,7 @@ export default function PostLayout({
   wordCount,
   readingTime,
 }: LayoutProps) {
-  const { filePath, path, slug, date, title, tags, summary, featured } = content
+  const { filePath, path, slug, date, title, tags, summary, featured, autoNumbering } = content
   const toc = (
     (content as { toc?: { value: string; url: string; depth: number }[] }).toc || []
   ).filter((t) => t.depth === 2 || t.depth === 3)
@@ -148,13 +148,17 @@ export default function PostLayout({
         </header>
 
         <div className="mt-10 xl:flex xl:justify-center xl:gap-12">
-          <div className="prose dark:prose-invert mx-auto w-full max-w-[42rem] min-w-0">
+          <div
+            className={`prose dark:prose-invert mx-auto w-full max-w-[42rem] min-w-0 ${
+              autoNumbering ? 'auto-numbered' : ''
+            }`}
+          >
             {children}
           </div>
           {showToc && (
             <aside className="hidden xl:block xl:w-52 xl:shrink-0">
               <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pb-4">
-                <TableOfContents toc={toc} />
+                <TableOfContents toc={toc} numbering={Boolean(autoNumbering)} />
               </div>
             </aside>
           )}
@@ -168,13 +172,7 @@ export default function PostLayout({
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {tags.map((tag) => (
-                  <Link
-                    key={tag}
-                    href={`/tags/${slugify(tag)}`}
-                    className="hover:border-primary-300 hover:text-primary-600 dark:hover:border-primary-600 dark:hover:text-primary-400 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 font-mono text-[12.5px] text-gray-600 transition-colors dark:border-gray-700/80 dark:bg-gray-800/60 dark:text-gray-400"
-                  >
-                    {tag}
-                  </Link>
+                  <Tag key={tag} text={tag} />
                 ))}
               </div>
             </div>

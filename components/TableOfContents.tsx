@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { numberToc } from '@/lib/headingNumbering'
 
 export type TocItem = {
   value: string
@@ -13,9 +14,17 @@ const MIN_ITEMS = 3
 /**
  * 文章页 sticky 目录：只取 h2/h3，滚动高亮当前章节。
  * 条目太少（< MIN_ITEMS）时不渲染。
+ * numbering=true 时给条目加编号（与正文的 CSS 计数器同规则，见 lib/headingNumbering.ts）。
  */
-export default function TableOfContents({ toc }: { toc: TocItem[] }) {
+export default function TableOfContents({
+  toc,
+  numbering = false,
+}: {
+  toc: TocItem[]
+  numbering?: boolean
+}) {
   const items = useMemo(() => (toc || []).filter((t) => t.depth === 2 || t.depth === 3), [toc])
+  const numbers = useMemo(() => (numbering ? numberToc(items) : null), [numbering, items])
   const [activeId, setActiveId] = useState('')
 
   useEffect(() => {
@@ -77,6 +86,11 @@ export default function TableOfContents({ toc }: { toc: TocItem[] }) {
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-200'
                 }`}
               >
+                {numbers?.get(item.url) && (
+                  <span className="mr-1.5 font-mono text-[11.5px] text-gray-400 tabular-nums dark:text-gray-500">
+                    {numbers.get(item.url)}
+                  </span>
+                )}
                 {item.value}
               </a>
             </li>

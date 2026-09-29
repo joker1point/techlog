@@ -2,12 +2,11 @@
 
 import { usePathname } from 'next/navigation'
 import { slug } from 'github-slugger'
-import { formatDate } from 'pliny/utils/formatDate'
 import { CoreContent } from 'pliny/utils/contentlayer'
 import type { Blog } from 'contentlayer/generated'
 import Link from '@/components/Link'
+import PostEntry from '@/components/PostEntry'
 import Tag from '@/components/Tag'
-import siteMetadata from '@/data/siteMetadata'
 import tagData from 'app/tag-data.json'
 
 interface PaginationProps {
@@ -19,164 +18,153 @@ interface ListLayoutProps {
   title: string
   initialDisplayPosts?: CoreContent<Blog>[]
   pagination?: PaginationProps
+  /** 全站文章总数（侧栏「全部文章」显示用；tag 页的 posts 是过滤后的，不能拿来当总数） */
+  totalPosts?: number
 }
 
 function Pagination({ totalPages, currentPage }: PaginationProps) {
   const pathname = usePathname()
-  const segments = pathname.split('/')
-  const lastSegment = segments[segments.length - 1]
   const basePath = pathname
     .replace(/^\//, '') // Remove leading slash
     .replace(/\/page\/\d+\/?$/, '') // Remove any trailing /page
     .replace(/\/$/, '') // Remove trailing slash
   const prevPage = currentPage - 1 > 0
   const nextPage = currentPage + 1 <= totalPages
+  // 第 1 页不能写成 `/blog/`——全站 trailingSlash:false，带尾斜杠会 404
+  const pageHref = (n: number) => (n === 1 ? `/${basePath}` : `/${basePath}/page/${n}`)
 
   return (
-    <div className="space-y-2 pt-6 pb-8 md:space-y-5">
-      <nav className="flex justify-between">
-        {!prevPage && (
-          <button className="cursor-auto disabled:opacity-50" disabled={!prevPage}>
-            Previous
-          </button>
-        )}
-        {prevPage && (
-          <Link
-            href={currentPage - 1 === 1 ? `/${basePath}/` : `/${basePath}/page/${currentPage - 1}`}
-            rel="prev"
-          >
-            Previous
-          </Link>
-        )}
-        <span>
-          {currentPage} of {totalPages}
-        </span>
-        {!nextPage && (
-          <button className="cursor-auto disabled:opacity-50" disabled={!nextPage}>
-            Next
-          </button>
-        )}
-        {nextPage && (
-          <Link href={`/${basePath}/page/${currentPage + 1}`} rel="next">
-            Next
-          </Link>
-        )}
-      </nav>
-    </div>
+    <nav className="mt-10 flex items-center justify-between border-t border-gray-200 pt-6 font-mono text-[12.5px] dark:border-gray-700/80">
+      {prevPage ? (
+        <Link
+          href={pageHref(currentPage - 1)}
+          rel="prev"
+          className="text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+        >
+          ← 上一页
+        </Link>
+      ) : (
+        <span className="text-gray-300 dark:text-gray-600">← 上一页</span>
+      )}
+      <span className="text-gray-400 tabular-nums dark:text-gray-500">
+        第 {currentPage} / {totalPages} 页
+      </span>
+      {nextPage ? (
+        <Link
+          href={pageHref(currentPage + 1)}
+          rel="next"
+          className="text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+        >
+          下一页 →
+        </Link>
+      ) : (
+        <span className="text-gray-300 dark:text-gray-600">下一页 →</span>
+      )}
+    </nav>
   )
 }
 
+/**
+ * 带标签导航的列表页（2026-09-29 改版）：
+ * 侧栏改为与文章目录同一套语言（mono 标签 + 左细线 + 当前项主色），
+ * 去掉此前的灰底阴影卡片；移动端补一行可横向滚动的标签。
+ */
 export default function ListLayoutWithTags({
   posts,
   title,
   initialDisplayPosts = [],
   pagination,
+  totalPosts,
 }: ListLayoutProps) {
   const pathname = usePathname()
   const tagCounts = tagData as Record<string, number>
   const tagKeys = Object.keys(tagCounts)
   const sortedTags = tagKeys.sort((a, b) => tagCounts[b] - tagCounts[a])
+  const activeTag = decodeURI(pathname.split('/tags/')[1] ?? '')
 
   const displayPosts = initialDisplayPosts.length > 0 ? initialDisplayPosts : posts
 
+  const tagList = (
+    <ul className="space-y-px border-l border-gray-200 dark:border-gray-700/80">
+      <li>
+        <Link
+          href="/blog"
+          className={`-ml-px block border-l-2 py-1.5 pl-3 text-[13px] leading-5 transition-colors ${
+            pathname.startsWith('/blog')
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400 font-medium'
+              : 'hover:border-primary-300 border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
+          }`}
+        >
+          全部文章
+          {totalPosts !== undefined && (
+            <span className="ml-1.5 text-gray-400 tabular-nums dark:text-gray-500">
+              {totalPosts}
+            </span>
+          )}
+        </Link>
+      </li>
+      {sortedTags.map((t) => (
+        <li key={t}>
+          <Link
+            href={`/tags/${slug(t)}`}
+            className={`-ml-px block border-l-2 py-1.5 pl-3 text-[13px] leading-5 transition-colors ${
+              activeTag === slug(t)
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400 font-medium'
+                : 'hover:border-primary-300 border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
+            }`}
+          >
+            {t}
+            <span className="ml-1.5 text-gray-400 tabular-nums dark:text-gray-500">
+              {tagCounts[t]}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+
   return (
     <>
-      <div>
-        <div className="pt-6 pb-6">
-          <h1 className="text-3xl leading-9 font-extrabold tracking-tight text-gray-900 sm:hidden sm:text-4xl sm:leading-10 md:text-6xl md:leading-14 dark:text-gray-100">
-            {title}
-          </h1>
+      <header className="border-b border-gray-200 pb-7 dark:border-gray-700/80">
+        <div className="font-mono text-[12.5px] tracking-[0.18em] text-gray-400 uppercase dark:text-gray-500">
+          共 {posts.length} 篇
         </div>
-        <div className="flex sm:space-x-24">
-          <div className="hidden h-full max-h-screen max-w-[280px] min-w-[280px] flex-wrap overflow-auto rounded-sm bg-gray-50 pt-5 shadow-md sm:flex dark:bg-gray-900/70 dark:shadow-gray-800/40">
-            <div className="px-6 py-4">
-              {pathname.startsWith('/blog') ? (
-                <h3 className="text-primary-500 font-bold uppercase">All Posts</h3>
-              ) : (
-                <Link
-                  href={`/blog`}
-                  className="hover:text-primary-500 dark:hover:text-primary-500 font-bold text-gray-700 uppercase dark:text-gray-300"
-                >
-                  All Posts
-                </Link>
-              )}
-              <ul>
-                {sortedTags.map((t) => {
-                  return (
-                    <li key={t} className="my-3">
-                      {decodeURI(pathname.split('/tags/')[1]) === slug(t) ? (
-                        <h3 className="text-primary-500 inline px-3 py-2 text-sm font-bold uppercase">
-                          {`${t} (${tagCounts[t]})`}
-                        </h3>
-                      ) : (
-                        <Link
-                          href={`/tags/${slug(t)}`}
-                          className="hover:text-primary-500 dark:hover:text-primary-500 px-3 py-2 text-sm font-medium text-gray-500 uppercase dark:text-gray-300"
-                          aria-label={`View posts tagged ${t}`}
-                        >
-                          {`${t} (${tagCounts[t]})`}
-                        </Link>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
+        <h1 className="mt-3 text-[1.75rem] leading-[1.25] font-extrabold tracking-tight text-balance text-gray-900 sm:text-[2.125rem] dark:text-gray-50">
+          {title}
+        </h1>
+      </header>
+
+      <div className="mt-8 flex flex-col gap-10 sm:flex-row sm:gap-14">
+        <aside className="hidden w-[190px] shrink-0 sm:block">
+          <div className="font-mono text-[11px] tracking-[0.18em] text-gray-400 uppercase dark:text-gray-500">
+            标签
           </div>
-          <div>
-            <ul>
-              {displayPosts.map((post) => {
-                const { path, date, title, summary, tags, featured } = post
-                return (
-                  <li
-                    key={path}
-                    className="py-5 transition-all duration-300 ease-out hover:translate-x-10"
-                  >
-                    <article className="flex flex-col space-y-2 xl:space-y-0">
-                  <dl>
-                    <dt className="sr-only">Published on</dt>
-                    <dd className="text-base leading-6 font-medium text-gray-500 dark:text-gray-400">
-                      <time dateTime={date} suppressHydrationWarning>
-                        {formatDate(date, siteMetadata.locale)}
-                      </time>
-                      {(post as { wordCount?: number; readingTime?: { text?: string } }).wordCount && (
-                        <span className="ml-2 text-sm text-gray-400 dark:text-gray-500">
-                          {((post as { wordCount?: number }).wordCount || 0).toLocaleString()} 字
-                          {((post as { readingTime?: { text?: string } }).readingTime?.text || '') &&
-                            ` · ${((post as { readingTime?: { text?: string } }).readingTime as { text: string }).text}`}
-                        </span>
-                      )}
-                      {featured && (
-                            <span className="bg-primary-500 ml-2 inline-block rounded px-2 py-0.5 text-xs font-bold text-white">
-                              置顶
-                            </span>
-                          )}
-                        </dd>
-                      </dl>
-                      <div className="space-y-3">
-                        <div>
-                          <h2 className="text-2xl leading-8 font-bold tracking-tight">
-                            <Link href={`/${path}`} className="text-gray-900 dark:text-gray-100">
-                              {title}
-                            </Link>
-                          </h2>
-                          <div className="flex flex-wrap">
-                            {tags?.map((tag) => <Tag key={tag} text={tag} />)}
-                          </div>
-                        </div>
-                        <div className="prose max-w-none text-gray-500 dark:text-gray-400">
-                          {summary}
-                        </div>
-                      </div>
-                    </article>
-                  </li>
-                )
-              })}
-            </ul>
-            {pagination && pagination.totalPages > 1 && (
-              <Pagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} />
+          <div className="mt-3">{tagList}</div>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          <div className="no-scrollbar -mx-4 mb-2 flex gap-2 overflow-x-auto px-4 pb-1 sm:hidden">
+            {sortedTags.slice(0, 12).map((t) => (
+              <Tag key={t} text={t} count={tagCounts[t]} />
+            ))}
+          </div>
+
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700/80">
+            {displayPosts.length === 0 && (
+              <li className="py-16 text-center text-[15px] text-gray-500 dark:text-gray-400">
+                暂无文章。
+              </li>
             )}
-          </div>
+            {displayPosts.map((post) => (
+              <li key={post.path} className="py-8">
+                <PostEntry post={post} compact />
+              </li>
+            ))}
+          </ul>
+
+          {pagination && pagination.totalPages > 1 && (
+            <Pagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} />
+          )}
         </div>
       </div>
     </>

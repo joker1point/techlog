@@ -7,6 +7,12 @@ import Image from './Image'
 import CustomLink from './Link'
 import TableWrapper from './TableWrapper'
 import Mermaid from './Mermaid'
+// 语义组件（2026-09-29）：正文里可用的编辑级区块，用法见 faq/semantic-components.md
+import Callout from './mdx/Callout'
+import Figure from './mdx/Figure'
+import PullQuote from './mdx/PullQuote'
+import Stat from './mdx/Stat'
+import StatGrid from './mdx/StatGrid'
 
 type CodeLikeProps = { className?: string; children?: ReactNode }
 
@@ -59,4 +65,10 @@ export const components: MDXComponents = {
   pre: MdxPre,
   table: TableWrapper,
   BlogNewsletterForm,
+  // 语义组件：给正文提供编辑级结构（提示块 / 带图注插图 / 数据卡 / 摘句）
+  Callout,
+  Figure,
+  Stat,
+  StatGrid,
+  PullQuote,
 }

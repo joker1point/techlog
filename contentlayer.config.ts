@@ -1,6 +1,7 @@
 import { defineDocumentType, ComputedFields, makeSource } from 'contentlayer2/source-files'
 import { writeFileSync } from 'fs'
 import { countWords, readingTime as calcReadingTime } from './lib/wordCount'
+import { shouldAutoNumber } from './lib/headingNumbering'
 import { slug } from 'github-slugger'
 import path from 'path'
 import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic'
@@ -72,6 +73,17 @@ const computedFields: ComputedFields = {
     resolve: (doc) => doc._raw.sourceFilePath,
   },
   toc: { type: 'json', resolve: (doc) => extractTocHeadings(doc.body.raw) },
+  // 章节自动编号是否启用（2026-09-29）：正文已有人工编号（一、/ 1.）的文章不编号，
+  // 避免「一、1. 标题」双重编号；章节数 <3 也不编号。frontmatter 的
+  // `numbering: true|false` 可强制覆盖。规则集中在 lib/headingNumbering.ts。
+  autoNumbering: {
+    type: 'boolean',
+    resolve: (doc) => {
+      const override = (doc as unknown as { numbering?: boolean | null }).numbering
+      if (typeof override === 'boolean') return override
+      return shouldAutoNumber(doc.body.raw)
+    },
+  },
 }
 
 /**
@@ -120,6 +132,8 @@ export const Blog = defineDocumentType(() => ({
     draft: { type: 'boolean' },
     featured: { type: 'boolean' },
     summary: { type: 'string' },
+    // 可选：强制开/关章节自动编号（不写则按正文是否已有人工编号自动判定）
+    numbering: { type: 'boolean' },
     images: { type: 'json' },
     authors: { type: 'list', of: { type: 'string' } },
     layout: { type: 'string' },

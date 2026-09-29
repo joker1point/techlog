@@ -348,3 +348,44 @@ input:-webkit-autofill:focus {
   border-radius: 0;
   border: none;
 }
+
+/* ===== 章节自动编号（2026-09-29）=====
+   只对「正文没有人工编号」的文章启用：contentlayer 的 autoNumbering 决定
+   prose 容器是否挂 `.auto-numbered`（见 lib/headingNumbering.ts）。
+   用 CSS 计数器而不是改写标题文本 —— 不动 anchor id、不改 toc 提取；
+   目录侧的编号由 numberToc() 用同一套规则算出（1. / 1.1），两边保持一致。 */
+.auto-numbered {
+  counter-reset: h2counter;
+}
+
+.auto-numbered h2 {
+  counter-increment: h2counter;
+  counter-reset: h3counter;
+}
+
+.auto-numbered h2::before {
+  content: counter(h2counter) '.';
+  display: inline-block;
+  min-width: 1.6em;
+  margin-right: 0.35em;
+  color: var(--color-primary-500);
+  font-variant-numeric: tabular-nums;
+}
+
+.auto-numbered h3 {
+  counter-increment: h3counter;
+}
+
+.auto-numbered h3::before {
+  content: counter(h2counter) '.' counter(h3counter);
+  display: inline-block;
+  min-width: 2.4em;
+  margin-right: 0.35em;
+  color: var(--color-primary-500);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 锚点图标不需要为编号让位：它默认 margin-left:-24px 正好抵消自身宽度（advance = 0），
+   文字仍从编号右侧开始，图标落进编号框右侧的空白里。⚠️ 别去加大这个负 margin ——
+   图标的 <a> 是内联元素，负 margin 会减少内联前进量，把标题文字整体左移压到编号上
+   （2026-09-29 实测踩到：标题文字左移 68.8px 盖住数字，看起来像"编号没生效"）。 */
