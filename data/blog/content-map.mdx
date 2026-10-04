@@ -1,0 +1,109 @@
+---
+title: 'TechLog 内容地图：这个博客在写什么，从哪读起'
+date: '2026-10-04'
+lastmod: '2026-10-04'
+tags: ['guide']
+draft: false
+featured: true
+summary: '把全站复盘按五条主题线串起来：RAG 与检索、Agent 工程、开源贡献、工程基本功、AI 行业观察——每条线给出推荐阅读顺序与每篇的一句话导语，方便按图索骥，或者顺着一条线读下去。'
+---
+
+**这个博客在写什么？一句话：从一线实操里长出来的工程复盘——RAG 怎么搭、Agent 怎么治、实验怎么证、坑怎么沉淀。**
+
+文章从 5 月写到 10 月，攒了二十多篇。零散地翻容易迷路，所以有了这张内容地图：按主题分成几条线，每条线给出推荐顺序，每篇一句话说明它解决什么问题。
+
+<Callout type="key" title="怎么用">
+- **顺着读**：挑一条你关心的线，从上往下；同一条线里越靠前的越适合先读。
+
+- **按图索骥**：直接跳到关心的那一篇。
+
+- **先感受一下风格**：可以从 [多路召回实验](/blog/multi-route-retrieval-experiment)（文末带两个可直接操作的交互页）或 [分块重构](/blog/rag-chunking-refactor-and-eval-traps) 开始。
+</Callout>
+
+---
+
+## 一、RAG 与检索：把「找资料」这件事做扎实
+
+这是最完整的一条线：从整体架构，到分块层的重构，再到检索配置的实验与选型框架。**建议按顺序读**——每一篇都是下一篇的铺垫。
+
+- [RAG 链路全解析：从文档入库到混合记忆的实战架构](/blog/rag-pipeline-architecture) —— 先建立坐标系：文档入库、向量化、召回重排、Prompt 拼接，以及基于 Node.js + ChromaDB + SQLite 的三层混合记忆方案。
+
+- [把 143 块拆到 45 块：一次 RAG 分块重构，和它揭出来的评测陷阱](/blog/rag-chunking-refactor-and-eval-traps) —— 分块层的完整重构（全库 1959 → 1120 块、HTML 残留 38.3% → 0%），以及改好之后「怎么证明它变好了」——三个评测自身的陷阱。
+
+- [修 5 坏 2，还是修 3 坏 0？——一次 55 题的多路召回实验](/blog/multi-route-retrieval-experiment) —— 给检索补一条字面路（BM25）修专名盲区：全开能多答对 5 题但弄坏 2 题，改成条件触发则多答对 3 题、零回退。含 λ 的两次扫描与一条「不算数的修复」的诚实标注。
+
+- [RAG 还必要吗：从 130 条技术评论里提炼出的选型决策框架](/blog/rag-vs-agent-retrieval-decision-framework) —— 什么时候该上 RAG、什么时候该交给 Agent 自主检索：按更新频率、查询频率、数据规模、领域特性做决策。
+
+## 二、Agent 工程：架构、治理与防御
+
+把 Agent 当成一个需要工程化治理的系统来看：先定位它该不该存在，再谈架构怎么演进、Skill 怎么治理、失败怎么兜底、注入怎么防。
+
+- [Workflow vs Agent：用 7 维度框架定位你的项目](/blog/workflow-vs-agent-7-dimensions) —— 动工之前先回答「这里到底需不需要 Agent」；能说清「为什么不需要」和硬说「这里有 Agent」一样重要。
+
+- [我的 Agent 架构演进：Skill 压平 Sub Agent，Restatement 又把它拉了回来](/blog/agent-architecture-evolution-skill-restatement) —— 一条完整的踩坑迭代链：三层架构 → Skill 压平降 Token → 长任务撞上步骤合并跳过、规则失效 → Restatement 机制与 Sub Agent 回归。
+
+- [我是如何保证 Agent Skill 多而不乱的？](/blog/agent-skill-governance) —— 700+ Skill 库的四层治理体系：选得对、管得住、改不坏、不腐烂。
+
+- [Agent 健壮性设计：工具调用与模型调用失败的容错与兜底](/blog/agent-fault-tolerance-design) —— 错误分类 → 退避重试 → 熔断 → 按能力等级优雅降级；以及「API 成功但业务失败」这类潜在错误的识别。
+
+- [Agent 怎么防止 Prompt 注入：四层纵深防御体系](/blog/agent-prompt-injection-defense) —— 输入侧、模型侧、执行侧、输出侧四层防御，其中执行侧权限管控是最硬的底线。
+
+- [如何沉淀 Agent 每次的踩坑经验](/blog/agent-lessons-precipitation) —— 把「记住教训」从模型自觉变成基础设施：规则强制捕获 → 定期蒸馏 → 协议化进化。
+
+- [把 22 篇项目文档蒸馏成一个可进化的全局技能](/blog/dev-lessons-skill-distillation) —— 上一套方法论的落地实例：按领域分文件、经验带场景标签与溯源，并内置进化协议。
+
+## 三、开源贡献：从架构分析到 PR 合入
+
+给陌生开源项目做贡献的完整路径，三篇连起来是一套可复制的方法。
+
+- [如何给一个陌生开源项目做架构分析，并找到能合进去的贡献点](/blog/mpt-open-source-contribution-analysis) —— 按 7 个维度拆解陌生项目、筛出 Top 3 贡献方向，附给维护者的英文沟通草稿。
+
+- [给 119k star 项目提 PR：8 小时从评论到合并的完整复盘](/blog/mpt-pr-1291-contribution-review) —— 占坑式沟通拿约束、用数据回应「改动过大」的顾虑、测试证据链决定合并速度。
+
+- [从参考项目移植功能的标准流程](/blog/port-feature-from-reference) —— 分析 → 集成范围 → 数据模型迁移 → 后端 → 前端 → 端到端验证的完整流程（FastAPI + Streamlit 实战）。
+
+## 四、工程基本功：可靠性、成本与安全
+
+与业务无关、但每个项目都会遇到的那类问题：怎么快速接手、机器怎么不崩、钱怎么不白花、站怎么不被打。
+
+- [如何快速接手一个项目并构建深度项目认知](/blog/onboarding-project-deep-understanding) —— 四阶段方法论：宏观定向（1-2 小时）→ 架构建模（半天）→ 运行验证（半天）→ 持续深化，含 12 个可执行步骤。
+
+- [最后一道内存防线：内存守护脚本的设计取舍与真实战报](/blog/memory-guard-last-line-of-defense) —— 32GB 开发机被 Electron 全家桶吃干之后：杀谁、什么时候动手、谁不能杀、守护者自己死了怎么办。
+
+- [成本治理：付费 API 的计费安全与双重试状态机设计](/blog/billing-safety-retry-state-machine) —— 生成请求与图片下载为什么必须是两个独立重试状态机——关键差异在计费语义。
+
+- [我建站如何确保数据安全](/blog/building-site-data-security) —— 独立开发者视角的全链路安全实践：Cloudflare 隧道、六维 API 防护、渗透测试验证、灰度发布与回滚。
+
+## 五、AI 行业观察：一线视角
+
+技术与产品的交叉判断，都带明确立场——不追热点，只写自己实操后确认的部分。
+
+- [Agent Washing：为什么大批企业升级 Agent 不会产生增值](/blog/agent-washing-why-no-value) —— Agent 有明确适用边界，把确定流程强行套上自主智能是技术错配。
+
+- [对 Agent 产品窗口期的看法](/blog/agent-window-period) —— 窗口期会很短的一个冷峻理由：Agent 本身就在提高开发 Agent 应用的效率。
+
+- [Anthropic 官方手册：打造 AI 原生创业公司的核心要点](/blog/anthropic-ai-native-startup) —— 如何从第一天起把 AI 融进验证、构建、运营与积累。
+
+- [IDE Agent 开发体验：为什么直接操作代码比通用 AI 助手更靠谱](/blog/ide-agent-vs-ai-assistant) —— 代码硬约束、幻觉抑制、精准代码定位——三种体验差异的来源。
+
+- [在 AI 时代，聚焦一线从业](/blog/focus-on-firstline-practice) —— 当信息数量的增量远大于质量增量，坚持实操上手、最小 MVP、避免无效输入。
+
+- [从程序员到初级架构师的思考路径](/blog/from-developer-to-junior-architect) —— 从「实现模块功能」到「理解整体架构」的思维切换。
+
+## 六、前端工程（早期几篇）
+
+5 月底到 6 月初的几篇，偏工程实践记录。
+
+- [构建现代设计系统：从 Design Tokens 到组件库](/blog/design-system-with-tailwind) —— 基于 Design Tokens 方法论、用 Tailwind CSS 搭可维护的设计系统。
+
+- [Next.js App Router 性能优化实战](/blog/nextjs-performance) —— 从 Server Components 到 Streaming SSR 的核心策略。
+
+- [前端工程化：从 Webpack 到 Turbopack 的迁移指南](/blog/webpack-to-turbopack) —— Next.js 15 的迁移策略与性能数据对比。
+
+## 七、技术追踪
+
+- [2026 年 9 月 GitHub 热门项目分析](/blog/github-trending-2026-09) —— 月榜 Top 10 逐项拆解，归纳出 Agent 输出制品化、上下文工程、Rust 工具化、AI × 教育/桌面四条趋势。
+
+---
+
+> 这张地图会随新文章更新。如果你想从某一篇开始聊——或者发现导语和正文对不上——欢迎在评论区或 GitHub 找我。
