@@ -13,7 +13,7 @@ const ContentSecurityPolicy = `
   media-src *.s3.amazonaws.com;
   connect-src *;
   font-src 'self';
-  frame-src giscus.app
+  frame-src giscus.app 'self'
 `
 
 const securityHeaders = [
@@ -56,6 +56,9 @@ const securityHeaders = [
 
 const output = process.env.EXPORT ? 'export' : undefined
 const basePath = process.env.BASE_PATH || undefined
+// 暴露给组件（LabEmbed 的原生 iframe 拼静态资源路径用）：
+// next/link 与 next/image 会自动加 basePath 前缀，原生 iframe / a 标签不会
+process.env.NEXT_PUBLIC_BASE_PATH = process.env.BASE_PATH || ''
 const unoptimized = process.env.UNOPTIMIZED ? true : undefined
 
 /**
@@ -92,6 +95,12 @@ module.exports = () => {
         {
           source: '/(.*)',
           headers: securityHeaders,
+        },
+        // 交互式实验室（public/static/lab/*.html）：需允许被同源文章页 iframe 内嵌，
+        // 覆盖全局 X-Frame-Options: DENY（GitHub Pages 线上为纯静态托管、不发送自定义头，本规则只影响本地 dev / 自托管）
+        {
+          source: '/static/lab/(.*)',
+          headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }],
         },
       ]
     },

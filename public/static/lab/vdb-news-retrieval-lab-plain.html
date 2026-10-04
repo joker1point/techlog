@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 助手为什么会答不上来？—— 一次找资料实验的完整复盘</title>
+<style>
+  :root{
+    --paper:#f4f7fb; --card:#ffffff; --ink:#16324f; --ink2:#4a6076; --ink3:#8296a9;
+    --line:#dbe4ee; --line2:#e9eff6;
+    --blue:#2f6fb2; --blue-soft:#e5eef8;
+    --green:#2e9e5b; --green-soft:#e4f4ea;
+    --red:#d0453e;  --red-soft:#fae9e8;
+    --amber:#e8a020; --amber-soft:#fbf1dd;
+    --purple:#7d5bb5; --purple-soft:#efe9f9;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.75;font-size:16px}
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 20px 80px}
+  :focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+
+  /* ── 头部 ── */
+  .hero{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:44px 40px 38px;margin-bottom:18px}
+  .tag{display:inline-block;font-size:13px;font-weight:700;color:var(--blue);background:var(--blue-soft);border-radius:999px;padding:4px 14px;letter-spacing:.05em}
+  h1{font-size:34px;line-height:1.35;font-weight:800;margin:16px 0 12px;letter-spacing:-.5px}
+  .hero p.sub{color:var(--ink2);font-size:16.5px;max-width:760px}
+  .hero p.sub b{color:var(--ink)}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px}
+  .step{background:var(--paper);border:1px solid var(--line2);border-radius:14px;padding:16px 18px}
+  .step .no{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+  .step .t{font-weight:700;font-size:15px;margin-bottom:3px}
+  .step .d{font-size:13.5px;color:var(--ink2)}
+
+  /* ── 章节标题 ── */
+  section{margin-top:46px}
+  .sec-head{margin-bottom:18px}
+  .sec-head .eyebrow{font-size:13px;font-weight:700;color:var(--blue);letter-spacing:.12em}
+  .sec-head h2{font-size:24px;font-weight:800;margin-top:4px}
+  .sec-head p{color:var(--ink2);font-size:15px;max-width:780px;margin-top:6px}
+  .sec-head p b{color:var(--ink)}
+
+  /* ── 两位搜索员 ── */
+  .staff{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .person{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px}
+  .person .avatar{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;margin-bottom:12px}
+  .person.a .avatar{background:var(--blue)}
+  .person.b .avatar{background:var(--purple)}
+  .person h3{font-size:18px;font-weight:800}
+  .person .en{font-size:12px;color:var(--ink3);font-family:var(--mono);margin:2px 0 10px}
+  .person p{font-size:14.5px;color:var(--ink2)}
+  .person p b{color:var(--ink)}
+  .goodbad{margin-top:12px;display:grid;gap:6px;font-size:13.5px}
+  .goodbad .g::before{content:"擅长：";color:var(--green);font-weight:700}
+  .goodbad .x::before{content:"短板：";color:var(--red);font-weight:700}
+  .goodbad .g,.goodbad .x{color:var(--ink2);padding-left:2px}
+
+  /* ── 实验台 ── */
+  .lab{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 24px}
+  .lrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line2)}
+  .lrow:last-child{border-bottom:none}
+  .lrow>label{width:110px;color:var(--ink2);font-size:14px;font-weight:600;flex:none}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:13.5px;background:var(--paper);border:1.5px solid var(--line);color:var(--ink2);
+        border-radius:999px;padding:6px 15px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--blue);color:var(--ink)}
+  .chip.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+  .sw{display:flex;align-items:center;gap:8px;background:var(--paper);border:1.5px solid var(--line);border-radius:10px;
+      padding:7px 14px;font-size:14px;cursor:pointer;user-select:none;white-space:nowrap;transition:.15s}
+  .sw input{accent-color:var(--blue);cursor:pointer;width:16px;height:16px}
+  .sw.on{border-color:var(--blue);background:var(--blue-soft)}
+  .sw .tip{font-size:11.5px;color:var(--ink3);cursor:help}
+  input[type=range]{accent-color:var(--blue);width:230px}
+  .mono{font-family:var(--mono)}
+  .hint{color:var(--ink3);font-size:12.5px}
+  .modebar{margin-top:12px;font-size:14.5px;padding:12px 16px;border-radius:12px;background:var(--blue-soft);border:1px dashed var(--blue);color:var(--ink2)}
+  .modebar b{color:var(--ink)}
+
+  /* ── 判定动画 ── */
+  .trigbox{margin-top:18px;border:1px solid var(--line2);border-radius:14px;padding:16px 18px;background:var(--paper)}
+  .trighead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .trighead .ttl{font-size:13px;color:var(--ink3)}
+  .replay{font-size:13px;font-weight:700;color:var(--blue);background:#fff;border:1.5px solid var(--blue);
+          border-radius:8px;padding:4px 14px;cursor:pointer;transition:.15s}
+  .replay:hover{background:var(--blue-soft)}
+  .trigflow{display:flex;align-items:stretch;flex-wrap:wrap}
+  .tstep{flex:1;min-width:180px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 15px;
+         opacity:.35;transition:opacity .25s,border-color .25s,box-shadow .25s}
+  .tstep .no{font-size:12px;color:var(--ink3)}
+  .tstep .tt{font-size:13.5px;font-weight:700;color:var(--ink);margin:2px 0 5px}
+  .tstep .td{font-family:var(--mono);font-size:13.5px;color:var(--ink);line-height:1.5}
+  .tstep .tsub{font-size:12px;color:var(--ink3);margin-top:5px;line-height:1.5}
+  .tstep.on{opacity:1;border-color:var(--blue);box-shadow:0 6px 18px -8px rgba(47,111,178,.4)}
+  .tstep.done{opacity:1}
+  .tstep.hit{border-color:var(--green);background:var(--green-soft)}
+  .tstep.warn{border-color:var(--amber);background:var(--amber-soft)}
+  .tstep.act{border-color:var(--green);background:var(--green-soft);box-shadow:0 0 0 1px var(--green)}
+  .tstep .scan{display:flex;gap:4px;margin-top:8px}
+  .tstep .scan i{width:12px;height:12px;border-radius:4px;background:var(--line);transition:.16s}
+  .tstep .scan i.lit{background:var(--blue)}
+  .tstep .scan i.chk{background:#b9cde4}
+  .tstep .scan i.hit{background:var(--green)}
+  .tarrow{display:flex;align-items:center;justify-content:center;width:34px;flex:none;color:var(--ink3);font-size:15px;opacity:.3;transition:.25s}
+  .tarrow.on{opacity:1;color:var(--blue)}
+
+  /* ── 三栏结果 ── */
+  .panels{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:14px;margin-top:18px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+  .panel h3{font-size:14px;font-weight:700;padding:12px 16px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .panel h3 .cnt{font-size:12px;color:var(--ink3);font-weight:400;white-space:nowrap}
+  .list{overflow-y:auto;max-height:400px;padding:8px}
+  .item{display:flex;gap:9px;align-items:flex-start;padding:8px 10px;border-radius:9px;font-size:13px;border:1.5px solid transparent}
+  .item:hover{background:var(--paper)}
+  .rk{font-family:var(--mono);color:var(--ink3);font-size:12px;min-width:20px;text-align:right;padding-top:2px}
+  .tt{flex:1;min-width:0}
+  .tt .ti{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5}
+  .tt .sr{color:var(--ink3);font-size:11.5px}
+  .item.gold{border-color:var(--amber);background:var(--amber-soft)}
+  .item.gold .ti::after{content:" ★ 正确答案在这里";color:var(--amber);font-size:11px;font-weight:700}
+  .item.rescued{border-color:var(--purple);background:var(--purple-soft)}
+  .srcbadge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex:none;margin-top:1px}
+  .srcbadge.d{color:var(--blue);background:var(--blue-soft)}
+  .srcbadge.b{color:var(--purple);background:var(--purple-soft)}
+  .srcbadge.db{color:#fff;background:linear-gradient(90deg,var(--blue),var(--purple))}
+
+  /* ── 关键指标 ── */
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+  .metric{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px}
+  .metric .l{font-size:13px;color:var(--ink2);font-weight:600}
+  .metric .m{font-family:var(--mono);font-size:26px;font-weight:800;margin-top:4px}
+  .metric .e{font-size:12.5px;color:var(--ink3);margin-top:2px}
+  .cc-g{color:var(--blue)} .cc-p{color:var(--purple)} .cc-k{color:var(--green)} .cc-r{color:var(--red)}
+
+  /* ── 排名轨道 ── */
+  .tracks{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 22px 13px;margin-top:18px}
+  .tracks .th{font-size:13.5px;color:var(--ink2);margin-bottom:10px}
+  .tracks .th b{color:var(--ink)}
+  .track{display:flex;align-items:center;gap:14px;padding:7px 0}
+  .track .tl{width:96px;font-size:13px;font-weight:700;color:var(--ink2);flex:none}
+  .track .rail{position:relative;flex:1;height:20px;background:var(--paper);border:1px solid var(--line2);border-radius:8px}
+  .track .rail i{position:absolute;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:#e8a02066}
+  .track .rail i.best{width:14px;height:14px;background:var(--amber);box-shadow:0 0 0 4px #e8a0202e}
+  .track .rail i.out{background:#d0453eaa}
+  .track .rail span.edge{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--green);border-radius:2px}
+  .track .rail em.elab{position:absolute;top:-16px;transform:translateX(-50%);font-size:10.5px;color:var(--green);font-style:normal;white-space:nowrap;font-weight:700}
+  .track .te{width:230px;font-size:12.5px;color:var(--ink3);flex:none}
+
+  /* ── 成绩单 ── */
+  .verdict{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px;margin-top:18px}
+  .verdict h3{font-size:17px;font-weight:800;margin-bottom:4px}
+  .verdict .s{color:var(--ink2);font-size:14px;margin-bottom:16px}
+  .verdict .s b{color:var(--ink)}
+  .vcards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .vc{background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px}
+  .vc.cur{border-color:var(--green);background:var(--green-soft);box-shadow:0 0 0 1px var(--green)}
+  .vc .t{font-size:12.5px;color:var(--ink2)}
+  .vc .k{font-size:16px;font-weight:800;margin:4px 0 2px}
+  .vc .d{font-family:var(--mono);font-size:12px;color:var(--ink3)}
+  .takeaway{margin-top:16px;font-size:14.5px;color:var(--ink2);border-left:4px solid var(--blue);padding:10px 16px;background:var(--blue-soft);border-radius:0 10px 10px 0}
+  .takeaway b{color:var(--ink)}
+
+  /* ── 调参故事 ── */
+  .scanbox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px}
+  .scanbox h3{font-size:17px;font-weight:800;margin-bottom:6px}
+  .scanbox .s{color:var(--ink2);font-size:14.5px;margin-bottom:14px}
+  .scanbox .s b{color:var(--ink)}
+  .lamtab{width:100%;border-collapse:collapse;font-size:14px}
+  .lamtab th{color:var(--ink2);font-weight:700;text-align:left;padding:8px 12px;border-bottom:2px solid var(--line);font-size:13px;white-space:nowrap}
+  .lamtab td{padding:8px 12px;border-bottom:1px solid var(--line2);font-family:var(--mono)}
+  .lamtab td:last-child{font-family:inherit;color:var(--ink2);font-size:13px}
+  .lamtab tr.hl td{background:var(--green-soft);color:var(--green);font-weight:700}
+  .lamtab tr.hl td:last-child{color:var(--green)}
+  .lamtab tr.dead td{color:var(--ink3)}
+  .lfoot{font-size:13px;color:var(--ink2);margin-top:10px;line-height:1.75}
+  .lfoot b{color:var(--ink)}
+  .concl{margin-top:16px;display:grid;gap:10px}
+  .concl .ci{background:var(--paper);border:1px solid var(--line2);border-radius:12px;padding:12px 18px;font-size:14.5px;color:var(--ink2)}
+  .concl .ci b{color:var(--ink)}
+
+  /* ── 结论 ── */
+  .final{background:var(--ink);color:#fff;border-radius:20px;padding:34px 38px;margin-top:46px}
+  .final h2{font-size:22px;font-weight:800;margin-bottom:16px}
+  .final ol{padding-left:22px;display:grid;gap:10px;font-size:15.5px;color:#c8d6e4}
+  .final ol b{color:#fff}
+
+  details.gloss{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0}
+  details.gloss summary{cursor:pointer;font-size:15px;font-weight:700;padding:16px 22px;color:var(--ink2);list-style:none}
+  details.gloss summary::before{content:"▸ ";}
+  details.gloss[open] summary::before{content:"▾ "}
+  details.gloss .inner{padding:0 22px 18px}
+  .gterm{display:grid;grid-template-columns:180px 1fr;gap:4px 16px;font-size:13.5px;padding:8px 0;border-bottom:1px solid var(--line2)}
+  .gterm:last-child{border-bottom:none}
+  .gterm dt{font-weight:700;color:var(--blue)}
+  .gterm dd{color:var(--ink2)}
+
+  footer{color:var(--ink3);font-size:12.5px;text-align:center;margin-top:34px;line-height:1.8}
+
+  @media(max-width:960px){
+    .steps,.staff,.panels,.metrics,.vcards{grid-template-columns:1fr}
+    h1{font-size:26px}
+    .hero{padding:30px 24px}
+    .track .te{display:none}
+    .track .tl{width:64px;font-size:12px}
+    .gterm{grid-template-columns:1fr}
+    .lrow>label{width:100%}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ═══ 开场 ═══ -->
+  <header class="hero">
+    <span class="tag">人人都能看懂的实验报告</span>
+    <h1>AI 助手为什么会答不上来？<br>—— 一次「找资料」实验的完整复盘</h1>
+    <p class="sub">
+      我们的 AI 助手回答问题前，会先去一个有 <b>1120 份资料</b> 的库里翻找参考。
+      这次实验用 <b>55 个真实问题</b> 做测试，结果发现：<b>能不能答对，很大程度取决于「对的资料有没有被翻出来」</b>。
+      下面这个实验台的数据全部来自真实测试，你可以亲手操作，复现每一个结论。
+    </p>
+    <div class="steps">
+      <div class="step"><div class="no">1</div><div class="t">翻资料</div><div class="d">两种搜索方法各自翻库，各出一份候选名单</div></div>
+      <div class="step"><div class="no">2</div><div class="t">并名单</div><div class="d">把两份名单按名次合成一份，取最前面的几条</div></div>
+      <div class="step"><div class="no">3</div><div class="t">再作答</div><div class="d">对的资料进了名单，AI 就能答；被挤掉就答不上</div></div>
+    </div>
+  </header>
+
+  <!-- ═══ 两位搜索员 ═══ -->
+  <section id="staff">
+    <div class="sec-head">
+      <div class="eyebrow">认识一下</div>
+      <h2>库里两位「搜索员」，脾气完全不同</h2>
+      <p>同一个资料库，两种翻法。它们各自擅长的题不一样——这正是整场实验的出发点。</p>
+    </div>
+    <div class="staff">
+      <div class="person a">
+        <div class="avatar">意</div>
+        <h3>懂意思的搜索</h3>
+        <div class="en">技术名：dense / 语义检索</div>
+        <p>把你的问题和资料都转成「意思」，按<b>意思相近</b>来找。哪怕资料里一个相同的字都没有，只要讲的是一回事，它也能翻出来。</p>
+        <div class="goodbad">
+          <div class="g">问法随意也能找到（“有没有不联网也能用的语音识别”这类大白话）</div>
+          <div class="x">遇到<b>没见过的专有名词</b>（比如冷门软件名）容易抓瞎——它不认识这个词，就找不到含这个词的资料</div>
+        </div>
+      </div>
+      <div class="person b">
+        <div class="avatar">字</div>
+        <h3>认字的搜索</h3>
+        <div class="en">技术名：BM25 / 关键词检索</div>
+        <p>完全按<b>字面</b>来：你打了哪些词，就去找哪些词出现得多的资料。一个专有名词只要库里出现过，它一定能揪出来。</p>
+        <div class="goodbad">
+          <div class="g">专有名词一抓一个准（软件名、型号名）</div>
+          <div class="x">问法一泛就乱来——会把“字面像、意思不像”的资料大量拉进来，反而挤掉真正有用的</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 实验台 ═══ -->
+  <section id="lab">
+    <div class="sec-head">
+      <div class="eyebrow">动手实验</div>
+      <h2>亲手试试：换一个问题，看名单怎么变</h2>
+      <p>
+        先选一个问题，再试下面这些开关。<b>带 ★ 黄框的资料</b> 就是「正确答案所在的资料」——
+        盯着它看就够了：<b>它进了最右边的名单，AI 就能答对；被挤出去，AI 就会答「资料里没提到」</b>。
+      </p>
+    </div>
+    <div class="lab">
+      <div class="lrow">
+        <label>选一个问题</label>
+        <div class="chips" id="qchips"></div>
+      </div>
+      <div class="lrow">
+        <label>搜索方式</label>
+        <label class="sw" id="sw-dense-box"><input type="checkbox" id="sw-dense" checked> 懂意思的搜索</label>
+        <label class="sw" id="sw-bm25-box"><input type="checkbox" id="sw-bm25" checked> 认字的搜索</label>
+        <label class="sw" id="sw-auto-box" title="只决定「认字的搜索」何时启用：仅当问题里有专有名词、且懂意思的搜索没找到时才补一手">
+          <input type="checkbox" id="sw-auto" checked> 自动求助 <span class="tip">什么时候帮？</span></label>
+      </div>
+      <div class="trigbox">
+        <div class="trighead">
+          <span class="ttl">机器人怎么决定「要不要请认字的同事帮忙」？三步判定，实时演示</span>
+          <span style="display:flex;align-items:center;gap:10px"><span class="hint" id="trignote"></span><button class="replay" id="replay">▶ 重放</button></span>
+        </div>
+        <div class="trigflow" id="trigflow"></div>
+      </div>
+      <div class="lrow">
+        <label>认字的话语权</label>
+        <input type="range" id="lam" min="0.4" max="3" step="0.05" value="1">
+        <span class="mono" id="lamv">1.00</span>
+        <span class="hint">往右拖 = 更听认字的搜索的。<b>只在「关掉自动求助、手动开两路」时生效</b>（自动求助触发时会自动用固定值 1.5）。经验值：<b>低于 0.9 时认字名单的第一名根本挤不进前 8，调了白调</b></span>
+      </div>
+      <div class="lrow">
+        <label>名单取几条</label>
+        <input type="range" id="topk" min="3" max="12" step="1" value="8">
+        <span class="mono" id="tkv">8</span>
+        <span class="hint">最后发给 AI 的参考条数。多了更全，但也掺进更多没用的</span>
+      </div>
+      <div class="modebar" id="modeline"></div>
+
+      <div class="panels">
+        <div class="panel">
+          <h3>懂意思的搜索找到的 <span class="cnt" id="dense-n"></span></h3>
+          <div class="list" id="dense-list"></div>
+        </div>
+        <div class="panel">
+          <h3>认字的搜索找到的 <span class="cnt" id="bm25-n"></span></h3>
+          <div class="list" id="bm25-list"></div>
+        </div>
+        <div class="panel">
+          <h3>合并后的名单（取前 <span class="mono" id="fk">8</span> 条） <span class="cnt" id="fuse-n"></span></h3>
+          <div class="list" id="fuse-list"></div>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric"><div class="l">正确答案排第几 · 只用懂意思的搜索</div><div class="m" id="m-dense"></div><div class="e" id="e-dense"></div></div>
+        <div class="metric"><div class="l">正确答案排第几 · 只用认字的搜索</div><div class="m" id="m-bm25"></div><div class="e" id="e-bm25"></div></div>
+        <div class="metric"><div class="l">正确答案排第几 · 当前合并名单</div><div class="m" id="m-fuse"></div><div class="e" id="e-fuse"></div></div>
+      </div>
+
+      <div class="tracks" id="tracks"></div>
+    </div>
+  </section>
+
+  <!-- ═══ 成绩单 ═══ -->
+  <section id="score">
+    <div class="sec-head">
+      <div class="eyebrow">真实成绩单</div>
+      <h2>四种用法各跑了 55 题，结果差别很大</h2>
+      <p>
+        下面的结果<b>不是模拟，是真实跑出来的答案状态</b>，只有两种：「<b>答上了</b>」和「<b>没答上</b>」（AI 回复“参考资料中未提到”）。
+        绿色卡片 = 你在实验台里当前的操作最接近哪种用法。
+      </p>
+    </div>
+    <div class="verdict">
+      <div class="vcards" id="vcards"></div>
+      <p class="takeaway" id="takeaway"></p>
+    </div>
+
+    <div class="board-cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px" id="board"></div>
+  </section>
+
+  <!-- ═══ 调参故事 ═══ -->
+  <section id="tuning">
+    <div class="sec-head">
+      <div class="eyebrow">调参过程</div>
+      <h2>「认字的话语权」这个数，是怎么试出来的</h2>
+      <p>
+        好消息是：<b>这一步完全不花钱</b>。只看检索结果、不需要 AI 真的去回答，所以秒级出结果。
+        我们只看两个信号：<b>专有名词被捞回来几条</b>（越多越好）、<b>和懂意思的名单重合几条</b>（重合越多越安全，说明没引入太多噪声）。
+      </p>
+    </div>
+    <div class="scanbox">
+      <h3>试错路线：先猜、再扫、后验证</h3>
+      <p class="s">
+        最早试的是「全局无差别调权重」——失败。但它暴露了一个反方向信号：把话语权压向认字一侧（<b>1.5</b>）时，
+        专有名词的捞回数从 1 条涨到 3 条。于是围绕 1.5 两侧扫描，得到下表：
+      </p>
+      <table class="lamtab">
+        <thead><tr><th>认字话语权</th><th>SenseVoice 题 捞回</th><th>Pyannote 题 捞回</th><th>量化题 与懂意思名单重合</th><th>判读</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td>1.5</td><td>3 条</td><td>3 条</td><td>3 / 8</td><td>专有名词场景最好 → 最终选择（只在自动求助触发时生效）</td></tr>
+          <tr><td>1.0</td><td>1 条</td><td>1 条</td><td>4 / 8</td><td>只救回 1 条，不够</td></tr>
+          <tr class="dead"><td>0.7</td><td>0 条</td><td>1 条</td><td>4 / 8</td><td>SenseVoice 题开始失守</td></tr>
+          <tr class="dead"><td>0.5</td><td>0 条</td><td>1 条</td><td>4 / 8</td><td>同上</td></tr>
+          <tr class="dead"><td>0.2</td><td>0 条</td><td>1 条</td><td>5 / 8</td><td>认字搜索已帮不上忙（灰行 = 数学上就没用，留作反证）</td></tr>
+        </tbody>
+      </table>
+      <p class="lfoot">
+        往大于 1.5 的方向也补扫了一遍：捞回数<b>全部停在原地不再涨</b>（SenseVoice / Pyannote 停在 3 条，量化题重合停在 3/8），
+        拖到 3.0 时另一道题的成绩反而开始掉。也就是说 <b>1.5 是「够用的最小偏置」——再高没有收益、只有风险</b>，扫描可以收工了。
+        最后用 55 题让 AI 真实作答验证：确认修好 3 道「零回答」的题（见上方成绩单）。
+      </p>
+      <div class="concl">
+        <div class="ci">① <b>没有全场景通吃的旋钮</b>——专有名词的题要偏认字，泛化的题怕认字太吵，全局调权重两头不讨好。</div>
+        <div class="ci">② <b>话语权低于 0.9 就是死区</b>——认字名单的第一名根本挤不进前 8（原因见实验台滑杆旁的提示），上表灰行就是反证。</div>
+        <div class="ci">③ <b>有效区间只剩两档：1.0（平权）和 1.5（偏认字）</b>——所以最终方案做成<b>开关而不是旋钮</b>：平时只用懂意思的搜索，自动求助触发时才把话语权切到 1.5。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 最终结论 ═══ -->
+  <section>
+    <div class="final">
+      <h2>三句话总结这次实验</h2>
+      <ol>
+        <li><b>AI 答不上来，多半不是「不会答」，而是「没找到资料」</b>——尤其是不认识的专有名词。</li>
+        <li><b>两种搜索互补，但不能永远一起开</b>：一起开虽然多了 3 题答对，却有 2 题明确变差；只在需要时请认字的搜索帮忙，才是零回退的最优解。</li>
+        <li><b>最终方案是一个开关，不是一根滑杆</b>：平时纯语义检索；一旦「问题含专有名词 + 语义没找到」同时成立，才自动补一手字面搜索（话语权<b>固定</b> 1.5，不受滑杆影响）。55 题实测：38 题答对、零回退——比纯语义的 35 题多 3 题（其中 1 题的修复含随机性成分，详见成绩单）。</li>
+      </ol>
+    </div>
+
+    <details class="gloss">
+      <summary>名词解释（本页出现的说法 ↔ 技术名词对照）</summary>
+      <div class="inner">
+        <dl>
+          <div class="gterm"><dt>懂意思的搜索</dt><dd>即「语义检索 / dense」：问题和资料都编码成向量、按语义相似度查找，没出现相同字词也能命中。</dd></div>
+          <div class="gterm"><dt>认字的搜索</dt><dd>即「BM25 / 关键词检索」：按关键词出现频率打分，专有名词准，但容易引入字面像、意思不像的噪声。</dd></div>
+          <div class="gterm"><dt>合并名单</dt><dd>即「RRF 倒数排名融合」：不看原始分数、只看各自名次（某路第 n 名得 权重÷(60+n)），两路相加后重排。</dd></div>
+          <div class="gterm"><dt>名单取几条 / 前 N 条</dt><dd>即「top-K」：融合后取前 K 条作为参考资料发给 AI。K 越大越全，噪声也越多。</dd></div>
+          <div class="gterm"><dt>认字的话语权</dt><dd>即「λ」：认字搜索相对语义搜索的权重，1.0 表示平权，越大越偏字面。自动求助触发时会固定用 1.5；旁边的滑杆只在「手动全开」时生效。</dd></div>
+          <div class="gterm"><dt>自动求助</dt><dd>即「条件触发 / auto」：仅当「问题含专有名词」且「语义搜索前 8 条没找到」时才启用字面搜索，其余时候保持纯语义。</dd></div>
+          <div class="gterm"><dt>正确答案（★）</dt><dd>即「金标准」：标题或正文含该题关键词的资料片段，是答对这道题所必需的参考。</dd></div>
+          <div class="gterm"><dt>答上了 / 没答上</dt><dd>实测答案状态：「实质回答」与「拒答」（AI 回复“参考资料中未提到”）。</dd></div>
+        </dl>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    VDB-News 检索实验 · 通俗版复盘 ｜ 数据与逻辑均在本文件内，无需联网与后端<br>
+    语料来自本地资料库真实快照（1120 份） ｜ 答案状态来自 55 题四配置真实评测
+  </footer>
+</div>
+
+<script>
+const DATA = {"meta":{"generated":"2026-09-29","corpus":"本地库 1120 chunks","note":"金标准 = 标题或正文含该题关键词的 chunk（用于示意哪条是正确答案）；判定 = 四配置下真实实测的答案状态；trigger = 与生产 rag/retriever.py 同款逻辑计算的 auto 触发判定（token 提取 + dense 前 8 条「标题+正文前 600 字」覆盖检查）"},"runs":[{"key":"dense","label":"纯 dense（baseline）"},{"key":"always","label":"always 全开（λ=1 等权）"},{"key":"auto","label":"auto 触发（λ=1 等权）"},{"key":"auto_l15","label":"auto 触发（λ=1.5 偏字面路）"}],"cases":[{"id":"A03","q":"SenseVoice 是什么模型？","why":"这道题输在「专有名词」上：懂意思的搜索不认识 SenseVoice，相关资料被埋到 25 名开外、进不了名单；自动求助后，认字的搜索把它捞了回来——「总是开」「自动求助」「求助+1.5」三种设置下都答上了。","keywords":["sensevoice"],"trigger":{"tokens":["SenseVoice"],"covered":false,"checked":8,"hit_rank":0,"hit_title":""},"verdicts":{"dense":{"kind":"短拒答","len":12},"always":{"kind":"实质回答","len":94},"auto":{"kind":"实质回答","len":94},"auto_l15":{"kind":"实质回答","len":188}},"dense":[{"id":"fc7f57e2dad081ee64d2f1c73d591a0e66ab6dca6f0f401d5844124ccb24ae35_chunk_0","title":"本地使用whisper模型实现语音识别 - 知乎","source":"联网搜索","gold":false},{"id":"40c9bb5e2424eaba22c4a2a07b69a0abbbbe49c8237693d08d0e6dd6d6b059fb_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"626ace6a9bfaa62f81f2608ccf60ec1e858ed30e988c8eeb16c88864f273ba5a_chunk_0","title":"Whisper 简介 - OpenAI","source":"联网搜索","gold":false},{"id":"27f2e0ed6cbe7a0253e1ff3f90518e944fe6b9d519b7cb689340f75687c3a644_chunk_0","title":"ASR神器：Whisper使用指南 - 知乎","source":"联网搜索","gold":false},{"id":"ec92a5efd4536dff7fcac49ab29b7675705b391788b4103f2df86e686a13ec0f_chunk_0","title":"低延迟实时语音识别（ASR）模型部署实践与选型 | 亚马逊AWS官方博客","source":"联网搜索","gold":false},{"id":"afab4e94e29b5fe8c47394b37972cf85d9decfd75a871003749d7b6e90e82ad2_chunk_1","title":"VoiceTrace: A Benchmark and Retrieval Framework for Who-Said-Wha","source":"Arxiv AS","gold":false},{"id":"629e61d01485c0ea953fd06619e10ced12011086c32a7e4769599053664c0b8b_chunk_0","title":"VoxTubeS: Distributable Speaker-Anonymized Synthetic Speech Corp","source":"Arxiv AS","gold":false},{"id":"ee024022144ac8093ced51da275deb7c5cef349da8390f6dcabcb856fd2af6e0_chunk_0","title":"The Limits of Reference-Free Speech Quality Metrics as Evaluator","source":"Arxiv SD","gold":false},{"id":"5c323279db5a776f4bb98401d76a67a467c2db71cde2b7b25e95485304bc2173_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"115f0131ff36f29ae324b16bf62cf883f51baefe46ab9b1f885059c4092845b1_chunk_0","title":"使用 Hugging Face 推理终端搭建强大的“语音识别 + 说话人分割 + 投机解码”工作流","source":"联网搜索","gold":false},{"id":"da8ac24508773f981b8dc46415d547291f5f262d66f4b472b8efbe0f9668e211_chunk_0","title":"debpalash/VoiceStudio","source":"GitHub Trending","gold":false},{"id":"0c3b1444714ec2e02eef4e4ed8b3e099c202bda48774d6269de1800cd9c42dfe_chunk_0","title":"Modeling, Scaling, and Decoding: Optimizing Controllable Speech ","source":"Arxiv AS","gold":false},{"id":"b5971efc77b0e87d3f4867f64907950b5bd76b0428a30a8ac7ff5e8c56c06457_chunk_0","title":"语音转文字准确率 95%!Whisper 本地部署完全指南 - 知乎","source":"联网搜索","gold":false},{"id":"f96c9ef74981a88b474f8d587f9e7e512c1f71e0b0cee357b4fdc419e691300b_chunk_0","title":"The VoiceMOS Challenge 2026: Evaluating Speech Enhancement, Emot","source":"Arxiv SD","gold":false},{"id":"57a4218beb4afd9f4b447fa078d85674c3d70f51a43625d05f7bfac4849ddcd7_chunk_0","title":"I'll Keep an Ear Out: Teaching AudioLLMs Proactive Audio Assista","source":"Arxiv SD","gold":false},{"id":"afab4e94e29b5fe8c47394b37972cf85d9decfd75a871003749d7b6e90e82ad2_chunk_0","title":"VoiceTrace: A Benchmark and Retrieval Framework for Who-Said-Wha","source":"Arxiv AS","gold":false},{"id":"6820b770701e05456ab5fb8783aec6a04a15b01ab9e8da401e987519a1b91588_chunk_0","title":"Voice-Light: A Full-Duplex Cascaded Voice Agent with Causal Turn","source":"Arxiv SD","gold":false},{"id":"524d1174578742bd623d72ce83a7e2ac4b9c0ba43e0f6015bc8f83fc3ae9bdc3_chunk_0","title":"StepAudio 3 Realtime Technical Report","source":"Arxiv SD","gold":false},{"id":"85426779947a36bdf49173b9305f488eb4abde8bff5f42282fa451583f5f5b4c_chunk_1","title":"MP-Bench: Evaluating Voice Agents as a Multiparty Conversation P","source":"Arxiv AS","gold":false},{"id":"2455b8a795bd3979a4a525f05dd7915336e289623cb50045a89049a9aa7cee91_chunk_0","title":"StepAudio 3 Gen Technical Report","source":"Arxiv SD","gold":false},{"id":"347ba59e0d67db8acb1af13e1aa4807a9bf60e9fa37a685fd2d27c4566fbfcf1_chunk_0","title":"All I Hear is Noise: Investigating Clever Hans Effects in Clinic","source":"Arxiv AS","gold":false},{"id":"e6bf99665d84f801466876f487558094dce24925ee08920d9078c3848aca293b_chunk_1","title":"HAMMER: Harmonic-Aware Parallel Context Modeling and Discriminat","source":"Arxiv AS","gold":false},{"id":"90d2b583d2e059051c1e10e7a0066ea83985c0ccb47f83dbe42d5c3674bf298c_chunk_0","title":"语音识别项目whisper - MaskerFan - 博客园","source":"联网搜索","gold":false},{"id":"629e61d01485c0ea953fd06619e10ced12011086c32a7e4769599053664c0b8b_chunk_1","title":"VoxTubeS: Distributable Speaker-Anonymized Synthetic Speech Corp","source":"Arxiv AS","gold":false},{"id":"1385db1341fbcbc6b6d6cda6c936c6c8556fb98c682b1e9ccb1b294c1ebb0cc7_chunk_2","title":"FunASR llama.cpp runtime v0.2.6","source":"FunASR Releases","gold":true},{"id":"85426779947a36bdf49173b9305f488eb4abde8bff5f42282fa451583f5f5b4c_chunk_0","title":"MP-Bench: Evaluating Voice Agents as a Multiparty Conversation P","source":"Arxiv AS","gold":false},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_16","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"f7676785a7603afdad22601cace0eff08da9ed1b9ea0607301fb69f56f520b31_chunk_0","title":"Samsone: A Family of Open Small Audio Language Models for On-Dev","source":"Arxiv AS","gold":false},{"id":"0c3b1444714ec2e02eef4e4ed8b3e099c202bda48774d6269de1800cd9c42dfe_chunk_1","title":"Modeling, Scaling, and Decoding: Optimizing Controllable Speech ","source":"Arxiv AS","gold":false},{"id":"f8246266e699ab2463eed73211d89c85c111fe70d5789030e40749bb107fbeb5_chunk_0","title":"Look Less, Hear Better: Jointly Rewarded GRPO for Streaming ASR","source":"Arxiv SD","gold":false},{"id":"79157104d000832c225b3164efc2dc3e76bf18a7f0fa0c60990cf0892af28cd7_chunk_0","title":"Agents API 🤖, Cognition SWE-2 👨‍💻, Muse Shared Agents 🧑‍🤝‍🧑","source":"TLDR AI","gold":false},{"id":"34b940e15971c4ab30ea962fd54c7e9c56bb5b31c249889c8affc14fead65b78_chunk_0","title":"Introducing Whisper | OpenAI","source":"联网搜索","gold":false}],"bm25":[{"id":"fc7f57e2dad081ee64d2f1c73d591a0e66ab6dca6f0f401d5844124ccb24ae35_chunk_0","title":"本地使用whisper模型实现语音识别 - 知乎","source":"联网搜索","gold":false},{"id":"31c3e9ec4b0c53a30e73c588e21c16c425fe935610a252f0f86c1ccd87814951_chunk_0","title":"陶哲轩邓煜究竟在反对什么：AI暴力解题摧毁人类数学精神","source":"量子位","gold":false},{"id":"0fe2b7204ab8d4404e88d3c16549b3495b36c202d844fbaa3bb987ba00c77127_chunk_0","title":"西门子不造机器人，为什么机器人进厂的故事里总有它？","source":"量子位","gold":false},{"id":"38aaa6381891847617d90fd9cdb5dc0cf3a73590d11fd9b0b4d3f618d1ccf8af_chunk_2","title":"v1.4.11","source":"FunASR Releases","gold":true},{"id":"59081544b6f20eab926923c35310cd07d2be0a960d20e5117ecf9715ecc4d409_chunk_3","title":"v1.4.13","source":"FunASR Releases","gold":true},{"id":"fc90565af8128535ef906bd37ce9c3e7f19848477f99e9bfa58a2cbefe04f9ab_chunk_0","title":"国产RSI模型交卷！Flash模型靠它反打旗舰","source":"量子位","gold":false},{"id":"1a9629055ad5d24371830fc76666511cfb27fd1d44f997ff71454fce6500d5bc_chunk_2","title":"FunASR v1.4.14","source":"FunASR Releases","gold":true},{"id":"799fc5e9e2c68ab9888497deb7fa45519a9841e52f983c604bbb31c736f82116_chunk_0","title":"王云鹤创业后交出首个模型","source":"量子位","gold":false},{"id":"c26952f74cf009c76d66841fab2a1d8280566b6f115de2e6214c98a039a0bef3_chunk_0","title":"虚幻引擎CEO围观最新世界模型：代码驱动，视频模型生成画面","source":"新智元","gold":false},{"id":"c10da0505435e67000f2d1a3cae572898bf970f226078fda4060f79354ed1d53_chunk_2","title":"v1.4.8","source":"FunASR Releases","gold":true},{"id":"6b4ae81c16947d1f2e7da2757f1bcec0e04bf3a98827855e7ea3156662be590b_chunk_5","title":"v1.4.15","source":"FunASR Releases","gold":true},{"id":"0040add4fe59e3a4f1f3569783a3a86dd58a831f62b9deb67339ac30c39c0c4e_chunk_2","title":"v1.4.12","source":"FunASR Releases","gold":true},{"id":"63a1de334ffd0769f49506450e471bac485da991e831dad301e037f3d547669f_chunk_3","title":"v1.4.9","source":"FunASR Releases","gold":true},{"id":"71419f4c7fe8c04ba49b0bf66a61816186d8dcebe6eea6fd700a2d859e4ed241_chunk_0","title":"一周连发6个模型！这家公司把具身智能的闭环跑通了","source":"量子位","gold":false},{"id":"5a63d99cda09beb987dde7b502599594554e53d0add376eb53933d6c08a4f87c_chunk_0","title":"探索RSI，生数新世界模型让机器人开始自我进化","source":"量子位","gold":false},{"id":"40c9bb5e2424eaba22c4a2a07b69a0abbbbe49c8237693d08d0e6dd6d6b059fb_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"6a31b5f2300364c38915c50957d069165e916a7738527c0adc91bf6b7dd4fe2d_chunk_0","title":"Meta新研究：字节模型蒸馏后，天花板破了","source":"量子位","gold":false},{"id":"a88747cadae724c33c14d38f41a6f957390f4229dd5ce22a18f4fb93fc778790_chunk_0","title":"把记忆交给CPU，大模型会变快","source":"量子位","gold":false},{"id":"fa54297c1d6206550f0b2f5a2fb79a736ab98d00b0ba97a0ba4c547f0293d28b_chunk_0","title":"清华稳准智能联合发布LimiX-2，结构化数据基础模型登顶国际评测榜单","source":"量子位","gold":false},{"id":"17153119086b3c25578859952da04b0fb1461136705d70d90bfa8321c97f2971_chunk_0","title":"菲尔兹奖得主入局大模型！4B手机Qwen+云端GLM刷爆ARC-AGI 3","source":"量子位","gold":false},{"id":"727cb1b8abd714a58e4829f59cf669464caef48bdeab23325d74e8b31a4cbe45_chunk_0","title":"蚂蚁百灵发布首个金融增强模型，AI开始进入真实投研工作流","source":"量子位","gold":false},{"id":"5dd4fefb63b79fc2d77c810e419e7f7da7d0d923b62c8b630f10ca0d56022f05_chunk_0","title":"探索RSI，生数新世界模型让机器人开始自我进化","source":"量子位","gold":false},{"id":"e577a119c623db2ac05149e1354f3a969c1f4d9347ce3ab0d205cde3f46fc63c_chunk_0","title":"仅成立4个月，这家中国公司的全原子生物基础大模型登顶全球","source":"新智元","gold":false},{"id":"4f56864ed7094f60a43d8467dc6bf3fb8013bbbf5bc20bb1881e84c1bf86ead8_chunk_0","title":"B站AI无限竞技场今日上线！全球百大AI模型同场竞技，GPT-6高居榜首","source":"量子位","gold":false},{"id":"30675330f8d20716912c7a0ac7a6a9f2b866be9c2939467d01ae247766843f26_chunk_0","title":"这个新开源的世界模型只有1.3B，单卡就能实时跑！","source":"量子位","gold":false},{"id":"2eb52ae29bf6f55b5f1f012c529212a9cef16570fe5fcb63ce23a8230dbb670d_chunk_0","title":"AI大模型工场2026 AI产业生态大会今日举办，大咖同台共探智能生长与产业共生","source":"量子位","gold":false},{"id":"ae7c36e9548ece3e5a098ad1f05e797f1a610661b78f7fbc5cc8bd3c0d3c155b_chunk_0","title":"全球首个3D原生城市世界模型ABot-Earth 0.7发布，构建AI理解真实世界的入口","source":"量子位","gold":false},{"id":"76f3a2138bf0abdce707eb3b8a404d2a6e91ce960703e9cb4d13ca665abae049_chunk_0","title":"全球AI视频榜单第一梯队再添中国力量：智象发布首款物理规律导向视频模型","source":"量子位","gold":false},{"id":"1a6a16a3c147df457914115dafbef8112295c22dcfbaa0005a5507114e428956_chunk_0","title":"原生全模态技术战略闭环，智象（HiDream.ai）发布具身世界模型HiDream-O1-Embodied","source":"量子位","gold":false},{"id":"c4a84c5e693c67e3e4576c52a2993c71ecee441ffc685ebd77519717a340bb9b_chunk_0","title":"AGI时代的第一个生图模型，ChatGPT Images 2.5上线","source":"量子位","gold":false},{"id":"9b96bf51c55ef20a352e8a860d850516077beed24628fce2311ac412b079d7b8_chunk_0","title":"AI开始改进“改进自己的方法”，RSI进入平方时代丨MetaRSI","source":"量子位","gold":false},{"id":"3aec261a086b4810e8dcf3e6ee182cf3f92e371a1121500b10304069b9547885_chunk_0","title":"2000+真实场景搬进仿真！一个导航模型零样本“通吃”四种机器人本体","source":"量子位","gold":false}]},{"id":"A12","q":"Pyannote 是用来做什么的？","why":"和上一题同病：Pyannote 太冷门，资料排到第 9 名、刚好够不着名单；自动求助后，认字的搜索把它捞了回来，问题解决。","keywords":["pyannote"],"trigger":{"tokens":["Pyannote"],"covered":false,"checked":8,"hit_rank":0,"hit_title":""},"verdicts":{"dense":{"kind":"短拒答","len":12},"always":{"kind":"实质回答","len":256},"auto":{"kind":"实质回答","len":240},"auto_l15":{"kind":"实质回答","len":227}},"dense":[{"id":"faba65e806f6c4200697532797265b6ef507a9e5876d683f810b37b6daf9f726_chunk_0","title":"pitelephantdawn/KMS-Pico-for-Win","source":"GitHub Trending","gold":false},{"id":"a72a8c8d784d0f35616e14adc3953b02227ed31a0eace5a3acf22e0496f68457_chunk_0","title":"arnegiacomo/fugleramme","source":"GitHub Trending","gold":false},{"id":"b6bb9341088f095442de1a74399cf3b7f18543efbdba973ae61774083f821ac5_chunk_0","title":"Panniantong/Agent-Reach","source":"GitHub Trending","gold":false},{"id":"2587e6ca5e42088903e9c1860eb4f582f3503120a91a0b583515042e5a57a91e_chunk_0","title":"OnyxConductorSnips/Discord-Raid-Tools","source":"GitHub Trending","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_41","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"b4484a96aa90c3f23e5cf684d1ddcd7e463443834d95c6196e827acc39e79a9e_chunk_0","title":"Tencent/WeKnora","source":"GitHub Trending","gold":false},{"id":"fffbcba03b0b217e48932bf108f9544d9d15dfe90cc71dd430d68dae9df9e2d9_chunk_0","title":"NeoMME: an efficient Multimodal-native and Multilingual Encoder","source":"Hugging Face Blog","gold":false},{"id":"07a8bcb8bde70b4f6c306d758562b59d1accfc8629786bfe0b75a1b1d8e7ffb0_chunk_3","title":"Unlabeled Echoes: Pseudo-Labels and Genus-Aware Smoothing for Ba","source":"Arxiv SD","gold":false},{"id":"590ac807f390605ece12020660be1e4db5863b76cae7fe82911787a3285bf9d8_chunk_0","title":"v1.13.6","source":"sherpa-onnx Releases","gold":true},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_22","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"f58bfcc50ee5e956e901fd82332ac11b36e5cf95513651f5183a5bae45f7c5b5_chunk_0","title":"watermitecreate/Optimizer-For-Windows","source":"GitHub Trending","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_46","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_25","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"da8ac24508773f981b8dc46415d547291f5f262d66f4b472b8efbe0f9668e211_chunk_0","title":"debpalash/VoiceStudio","source":"GitHub Trending","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_35","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_18","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"46f3c1d6124190bd41b81397d3ce3ed570d55a8c1b8799befb69f78070ce6b43_chunk_0","title":"ayghri/i-have-adhd","source":"GitHub Trending","gold":false},{"id":"f7676785a7603afdad22601cace0eff08da9ed1b9ea0607301fb69f56f520b31_chunk_1","title":"Samsone: A Family of Open Small Audio Language Models for On-Dev","source":"Arxiv AS","gold":false},{"id":"90c24b15b2f06499811acc92a19982f9dfdce5a197526741164483736a1571ba_chunk_0","title":"VelocityNodeCompute/Universal-Trading-Bot","source":"GitHub Trending","gold":false},{"id":"7e7bb7ee8fbc5314c7b87099c1faf844c64ab62e0231cead210f0f5eb08eab80_chunk_0","title":"webadderallorg/Recordly","source":"GitHub Trending","gold":false},{"id":"4214c1829821269da577f844a578f83f45ca62ff7d426d67d88fba15b709e741_chunk_1","title":"ScorePrompts: Natural-Language Exploration of Symbolic Music Sco","source":"Arxiv SD","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_7","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"0b226d68692a23fba8feb3b6e5035291ab23e75512824f48cc075ba970d18018_chunk_1","title":"NeMo Data Designer: An Extensible Framework for Multimodal Synth","source":"Arxiv AI","gold":false},{"id":"c6328442c9f121f60bb05422368c6f91905485fbc8fcf68e37835254ed6d8fec_chunk_2","title":"Data-Optimized Contingency Screening: A Machine Learning Approac","source":"Arxiv AI","gold":false},{"id":"3c87705c98eedbc929a47454165a15bbfcfbdfae3abc54eeb98a539611e0d0ea_chunk_0","title":"google/artemis","source":"GitHub Trending","gold":false},{"id":"54d26b37a7b6c7ac134f5d6a9c3f55b42bbb85f5868788753132cfb90fc80c1a_chunk_0","title":"k1tbyte/Wand-Enhancer","source":"GitHub Trending","gold":false},{"id":"65719aae4f745da314cc701b514d0e8f4cbdcf653bbb68a9cd695812d55f9c2e_chunk_0","title":"abue-ammar/tinycast","source":"GitHub Trending","gold":false},{"id":"d2871d486c61275aa18316221b2aa4fe0c0c7a730e7f24a395d9c1672c5c3fc3_chunk_0","title":"How V7 gives AI agents institutional memory","source":"OpenAI News","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_48","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"cdd1118267ee925c63286ac83c83df800f6195e85e821a17d4745982cb7ef8b5_chunk_0","title":"Give Your Coding Agents a Memory You Own","source":"Hugging Face Blog","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_42","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_40","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false}],"bm25":[{"id":"31c3e9ec4b0c53a30e73c588e21c16c425fe935610a252f0f86c1ccd87814951_chunk_0","title":"陶哲轩邓煜究竟在反对什么：AI暴力解题摧毁人类数学精神","source":"量子位","gold":false},{"id":"0fe2b7204ab8d4404e88d3c16549b3495b36c202d844fbaa3bb987ba00c77127_chunk_0","title":"西门子不造机器人，为什么机器人进厂的故事里总有它？","source":"量子位","gold":false},{"id":"590ac807f390605ece12020660be1e4db5863b76cae7fe82911787a3285bf9d8_chunk_0","title":"v1.13.6","source":"sherpa-onnx Releases","gold":true},{"id":"fc7f57e2dad081ee64d2f1c73d591a0e66ab6dca6f0f401d5844124ccb24ae35_chunk_0","title":"本地使用whisper模型实现语音识别 - 知乎","source":"联网搜索","gold":false},{"id":"90d2b583d2e059051c1e10e7a0066ea83985c0ccb47f83dbe42d5c3674bf298c_chunk_0","title":"语音识别项目whisper - MaskerFan - 博客园","source":"联网搜索","gold":false},{"id":"9b97b551cc6bec1a2d3c0577dedd5c7a2d6d6b3670e4d5d03e05aca0a99f7f04_chunk_2","title":"v1.13.5","source":"sherpa-onnx Releases","gold":true},{"id":"115f0131ff36f29ae324b16bf62cf883f51baefe46ab9b1f885059c4092845b1_chunk_0","title":"使用 Hugging Face 推理终端搭建强大的“语音识别 + 说话人分割 + 投机解码”工作流","source":"联网搜索","gold":true}]},{"id":"A07","q":"有没有支持端侧部署的语音识别方案？","why":"这道题是反面教材：问题里没有专有名词，所以「自动求助」不会触发、保持纯语义；但纯语义下它答不上来——资料其实进了名单（一份排第 2），拒答发生在最后的作答环节。四种配置里也只有「总是开两路」这次碰巧答上了（报告标注这类修复含随机性成分，不算稳定收益）。","keywords":["本地部署","端侧","on-device"],"trigger":{"tokens":[],"covered":true,"checked":8,"hit_rank":0,"hit_title":""},"verdicts":{"dense":{"kind":"长拒答","len":259},"always":{"kind":"实质回答","len":480},"auto":{"kind":"长拒答","len":482},"auto_l15":{"kind":"长拒答","len":259}},"dense":[{"id":"90d2b583d2e059051c1e10e7a0066ea83985c0ccb47f83dbe42d5c3674bf298c_chunk_0","title":"语音识别项目whisper - MaskerFan - 博客园","source":"联网搜索","gold":false},{"id":"b5971efc77b0e87d3f4867f64907950b5bd76b0428a30a8ac7ff5e8c56c06457_chunk_0","title":"语音转文字准确率 95%!Whisper 本地部署完全指南 - 知乎","source":"联网搜索","gold":true},{"id":"ab4a5f76564fcfd5e7004e84509869cd1c06898980c3550db0d3345f1cb9114d_chunk_0","title":"Python使用whisper实现语音识别（ASR） - CSDN博客","source":"联网搜索","gold":false},{"id":"40c9bb5e2424eaba22c4a2a07b69a0abbbbe49c8237693d08d0e6dd6d6b059fb_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"115f0131ff36f29ae324b16bf62cf883f51baefe46ab9b1f885059c4092845b1_chunk_0","title":"使用 Hugging Face 推理终端搭建强大的“语音识别 + 说话人分割 + 投机解码”工作流","source":"联网搜索","gold":false},{"id":"fc7f57e2dad081ee64d2f1c73d591a0e66ab6dca6f0f401d5844124ccb24ae35_chunk_0","title":"本地使用whisper模型实现语音识别 - 知乎","source":"联网搜索","gold":false},{"id":"5c323279db5a776f4bb98401d76a67a467c2db71cde2b7b25e95485304bc2173_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"ec92a5efd4536dff7fcac49ab29b7675705b391788b4103f2df86e686a13ec0f_chunk_0","title":"低延迟实时语音识别（ASR）模型部署实践与选型 | 亚马逊AWS官方博客","source":"联网搜索","gold":false},{"id":"27f2e0ed6cbe7a0253e1ff3f90518e944fe6b9d519b7cb689340f75687c3a644_chunk_0","title":"ASR神器：Whisper使用指南 - 知乎","source":"联网搜索","gold":false},{"id":"da8ac24508773f981b8dc46415d547291f5f262d66f4b472b8efbe0f9668e211_chunk_0","title":"debpalash/VoiceStudio","source":"GitHub Trending","gold":false},{"id":"626ace6a9bfaa62f81f2608ccf60ec1e858ed30e988c8eeb16c88864f273ba5a_chunk_0","title":"Whisper 简介 - OpenAI","source":"联网搜索","gold":false},{"id":"f1e39173a58ee9bac78a40a71e01e6ab1a8a830deab3ef6dec36a19eb0f6d93e_chunk_0","title":"无问芯穹联合清华、上交正式开源具身端侧推理引擎APXInf，Pi 0.5性能SOTA","source":"量子位","gold":true},{"id":"1385db1341fbcbc6b6d6cda6c936c6c8556fb98c682b1e9ccb1b294c1ebb0cc7_chunk_2","title":"FunASR llama.cpp runtime v0.2.6","source":"FunASR Releases","gold":false},{"id":"2be94d5b30ff34e12b9826fbed59c2797e9c09dca1ecc32743426c660cc9f37d_chunk_1","title":"v1.13.8","source":"sherpa-onnx Releases","gold":false},{"id":"2be94d5b30ff34e12b9826fbed59c2797e9c09dca1ecc32743426c660cc9f37d_chunk_0","title":"v1.13.8","source":"sherpa-onnx Releases","gold":false},{"id":"59081544b6f20eab926923c35310cd07d2be0a960d20e5117ecf9715ecc4d409_chunk_0","title":"v1.4.13","source":"FunASR Releases","gold":false},{"id":"1357a9ae7911e1d557ac7ffa71b9c9e7ae12a960458a027aff8f7f846d93a6f9_chunk_0","title":"Putting sign language AI into users’ hands","source":"Google DeepMind","gold":false},{"id":"57a4218beb4afd9f4b447fa078d85674c3d70f51a43625d05f7bfac4849ddcd7_chunk_0","title":"I'll Keep an Ear Out: Teaching AudioLLMs Proactive Audio Assista","source":"Arxiv SD","gold":false},{"id":"91dad0068ec24e5bcea7adc0e407700bb8999e1b3de1e0bfc9b0e6a4ed61b3fe_chunk_0","title":"Introducing @huggingface/kernels: 200+ WebGPU Kernels for Local ","source":"Hugging Face Blog","gold":false},{"id":"317580eff4afbd7afdfd0b1e3e98b1a2ca4d39cdb4b750b0a2f599543a8d378d_chunk_1","title":"X-CoSD: Communication-Efficient Cross-Vocabulary Collaborative S","source":"Arxiv CL","gold":false},{"id":"90af7f2c119e8dc03595a58fc18dd2ffc6eb0ea42c5f07276c41f1ac40b32e87_chunk_0","title":"TamilEOT: A Dataset and Model for Semantic End-of-Turn Detection","source":"Arxiv CL","gold":false},{"id":"0a8884baa5f55aa6602b2f44d034d5297a87f1a5cbc132774e27cb69f8d60a2d_chunk_0","title":"stablyai/orca","source":"GitHub Trending","gold":false},{"id":"7fe8c36835a166f06937fbb87ec797507b5070e6ce355c65da57d36d19bd98bf_chunk_30","title":"langchain==1.4.0a4","source":"LangChain Releases","gold":false},{"id":"6b4ae81c16947d1f2e7da2757f1bcec0e04bf3a98827855e7ea3156662be590b_chunk_1","title":"v1.4.15","source":"FunASR Releases","gold":false},{"id":"07a8bcb8bde70b4f6c306d758562b59d1accfc8629786bfe0b75a1b1d8e7ffb0_chunk_3","title":"Unlabeled Echoes: Pseudo-Labels and Genus-Aware Smoothing for Ba","source":"Arxiv SD","gold":false},{"id":"e652a51380432de41d45c378631b5d0507a0d3f7b7fa5c6d30869899312e0f89_chunk_0","title":"v1.13.7","source":"sherpa-onnx Releases","gold":false},{"id":"afab4e94e29b5fe8c47394b37972cf85d9decfd75a871003749d7b6e90e82ad2_chunk_1","title":"VoiceTrace: A Benchmark and Retrieval Framework for Who-Said-Wha","source":"Arxiv AS","gold":false},{"id":"9b97b551cc6bec1a2d3c0577dedd5c7a2d6d6b3670e4d5d03e05aca0a99f7f04_chunk_2","title":"v1.13.5","source":"sherpa-onnx Releases","gold":false},{"id":"fffbcba03b0b217e48932bf108f9544d9d15dfe90cc71dd430d68dae9df9e2d9_chunk_0","title":"NeoMME: an efficient Multimodal-native and Multilingual Encoder","source":"Hugging Face Blog","gold":false},{"id":"629e61d01485c0ea953fd06619e10ced12011086c32a7e4769599053664c0b8b_chunk_0","title":"VoxTubeS: Distributable Speaker-Anonymized Synthetic Speech Corp","source":"Arxiv AS","gold":false},{"id":"6820b770701e05456ab5fb8783aec6a04a15b01ab9e8da401e987519a1b91588_chunk_0","title":"Voice-Light: A Full-Duplex Cascaded Voice Agent with Causal Turn","source":"Arxiv SD","gold":false},{"id":"5ecbb7dec2f59c5fcac0ab46218f0a168be3d5bf52f398f80a3c169b3566dabc_chunk_0","title":"端侧AI从「能跑」到「会进化」，元空智能跑进惠普预装","source":"量子位","gold":true}],"bm25":[{"id":"fc7f57e2dad081ee64d2f1c73d591a0e66ab6dca6f0f401d5844124ccb24ae35_chunk_0","title":"本地使用whisper模型实现语音识别 - 知乎","source":"联网搜索","gold":false},{"id":"40c9bb5e2424eaba22c4a2a07b69a0abbbbe49c8237693d08d0e6dd6d6b059fb_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"b5971efc77b0e87d3f4867f64907950b5bd76b0428a30a8ac7ff5e8c56c06457_chunk_0","title":"语音转文字准确率 95%!Whisper 本地部署完全指南 - 知乎","source":"联网搜索","gold":true},{"id":"5c323279db5a776f4bb98401d76a67a467c2db71cde2b7b25e95485304bc2173_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"ab4a5f76564fcfd5e7004e84509869cd1c06898980c3550db0d3345f1cb9114d_chunk_0","title":"Python使用whisper实现语音识别（ASR） - CSDN博客","source":"联网搜索","gold":false},{"id":"ec92a5efd4536dff7fcac49ab29b7675705b391788b4103f2df86e686a13ec0f_chunk_0","title":"低延迟实时语音识别（ASR）模型部署实践与选型 | 亚马逊AWS官方博客","source":"联网搜索","gold":false},{"id":"115f0131ff36f29ae324b16bf62cf883f51baefe46ab9b1f885059c4092845b1_chunk_0","title":"使用 Hugging Face 推理终端搭建强大的“语音识别 + 说话人分割 + 投机解码”工作流","source":"联网搜索","gold":false},{"id":"27f2e0ed6cbe7a0253e1ff3f90518e944fe6b9d519b7cb689340f75687c3a644_chunk_0","title":"ASR神器：Whisper使用指南 - 知乎","source":"联网搜索","gold":false},{"id":"90d2b583d2e059051c1e10e7a0066ea83985c0ccb47f83dbe42d5c3674bf298c_chunk_0","title":"语音识别项目whisper - MaskerFan - 博客园","source":"联网搜索","gold":false},{"id":"626ace6a9bfaa62f81f2608ccf60ec1e858ed30e988c8eeb16c88864f273ba5a_chunk_0","title":"Whisper 简介 - OpenAI","source":"联网搜索","gold":false},{"id":"5ecbb7dec2f59c5fcac0ab46218f0a168be3d5bf52f398f80a3c169b3566dabc_chunk_0","title":"端侧AI从「能跑」到「会进化」，元空智能跑进惠普预装","source":"量子位","gold":true},{"id":"b62b74aedeee1e2e53e1c703122d352d7a53c23884ba7aa29cfbfe4cd9629fd0_chunk_0","title":"刚刚，国产2B小钢炮开源！逼近人类水平，跑出端侧通用Agent雏形","source":"新智元","gold":true},{"id":"43c28549258b954fcd17dca7b9c373cea20772be67cd17a192f5053c927b02b7_chunk_0","title":"OpenAI年内不上市了！奥特曼支持对手Dario呼吁：AI该踩刹车了","source":"量子位","gold":false},{"id":"f1e39173a58ee9bac78a40a71e01e6ab1a8a830deab3ef6dec36a19eb0f6d93e_chunk_0","title":"无问芯穹联合清华、上交正式开源具身端侧推理引擎APXInf，Pi 0.5性能SOTA","source":"量子位","gold":true},{"id":"cfa558366a3247d58418c2b78e7760ef83bd5471ee19c8ab8cf5003ed9832477_chunk_0","title":"吹爆开源！RunningHub让MiniMax H3满血提速12倍，本地部署照样起飞","source":"量子位","gold":true},{"id":"c1d961027b22201cd1f14afd0357a2da9898032878353f7040a246999bf79dc0_chunk_0","title":"A社承认Claude安全对齐存在缺陷，但“尚无解决方案”","source":"量子位","gold":false},{"id":"bb186ef0144f2caf3bfbb4f496eddf09b1a687100c79aa753037c704d50e498d_chunk_0","title":"长三角安全人工智能安徽省实验室发布星界、星驭、星鉴三大AI安全解决方案","source":"量子位","gold":false},{"id":"4c749fffac0adbefd9a5e3a6012a945fd65ddc4f4cc7795c055407ffceb8f11c_chunk_0","title":"国产数据库跑出AI新能力！OceanBase登顶国际Data Agent榜单","source":"量子位","gold":false},{"id":"0fe2b7204ab8d4404e88d3c16549b3495b36c202d844fbaa3bb987ba00c77127_chunk_0","title":"西门子不造机器人，为什么机器人进厂的故事里总有它？","source":"量子位","gold":false},{"id":"71419f4c7fe8c04ba49b0bf66a61816186d8dcebe6eea6fd700a2d859e4ed241_chunk_0","title":"一周连发6个模型！这家公司把具身智能的闭环跑通了","source":"量子位","gold":false},{"id":"9699abb8d849ffd69e95fbd7c6df9aa66f9bbb7738cbe6d5839092d2a064b2ce_chunk_0","title":"系统综述259项工作：AI创作如何从「会生成」走到「能交付」？","source":"新智元","gold":false}]},{"id":"B04","q":"大模型量化有哪些新方法？","why":"泛化题的反例：这道题懂意思的搜索本来答得很好，但「总是开两路」时认字搜索拉进来一堆字面像、意思不像的资料，反而把正确答案挤出名单——这就是不能永远开两路的原因。","keywords":["quantiz","量化","mxfp8","fp4"],"trigger":{"tokens":[],"covered":true,"checked":8,"hit_rank":0,"hit_title":""},"verdicts":{"dense":{"kind":"实质回答","len":701},"always":{"kind":"短拒答","len":18},"auto":{"kind":"实质回答","len":697},"auto_l15":{"kind":"实质回答","len":784}},"dense":[{"id":"9b96bf51c55ef20a352e8a860d850516077beed24628fce2311ac412b079d7b8_chunk_0","title":"AI开始改进“改进自己的方法”，RSI进入平方时代丨MetaRSI","source":"量子位","gold":false},{"id":"a88747cadae724c33c14d38f41a6f957390f4229dd5ce22a18f4fb93fc778790_chunk_0","title":"把记忆交给CPU，大模型会变快","source":"量子位","gold":false},{"id":"fa54297c1d6206550f0b2f5a2fb79a736ab98d00b0ba97a0ba4c547f0293d28b_chunk_0","title":"清华稳准智能联合发布LimiX-2，结构化数据基础模型登顶国际评测榜单","source":"量子位","gold":false},{"id":"239e71d723d55708fc6858bae17cd591882f69c838a7d936a6f32749c9a35e34_chunk_0","title":"Lexical Prompt Compression for Large Language Models: A Training","source":"Arxiv CL","gold":false},{"id":"ec92a5efd4536dff7fcac49ab29b7675705b391788b4103f2df86e686a13ec0f_chunk_0","title":"低延迟实时语音识别（ASR）模型部署实践与选型 | 亚马逊AWS官方博客","source":"联网搜索","gold":false},{"id":"448701fe99745f6407d1f9b23e42fccd2eb4024678bc0261d1b932b6823732fb_chunk_24","title":"v0.29.0","source":"vLLM Releases","gold":true},{"id":"4fea6ba7e675de8c626d26af7ee5db8e22a85ea9ac1da01f7a95e116b7329f46_chunk_0","title":"AI Model Changelog - New LLM Releases by Month | LLM Reference","source":"联网搜索","gold":false},{"id":"99ece13e787f34878e1aa51dbddbb5225faf52df17b97b47f26c7a12faad004a_chunk_14","title":"v0.28.0","source":"vLLM Releases","gold":true},{"id":"0f241c3fbba8f436cbc49105089a3cca04ad1cc959d5078997d39250ecbdce02_chunk_1","title":"Quantifying the Memorization-to-Generalization Transition: Scali","source":"Arxiv AI","gold":false},{"id":"cc9147ac98c5430907e9dca6c02ec60dc048f392f73b591ca366e4029e115030_chunk_1","title":"Neural Multichannel Distant Speaker Diarization with Heavy-taile","source":"Arxiv SD","gold":false},{"id":"17153119086b3c25578859952da04b0fb1461136705d70d90bfa8321c97f2971_chunk_0","title":"菲尔兹奖得主入局大模型！4B手机Qwen+云端GLM刷爆ARC-AGI 3","source":"量子位","gold":false},{"id":"727cb1b8abd714a58e4829f59cf669464caef48bdeab23325d74e8b31a4cbe45_chunk_0","title":"蚂蚁百灵发布首个金融增强模型，AI开始进入真实投研工作流","source":"量子位","gold":false},{"id":"a3fcab7e6887f1f1bd1488cb995aa8832a3cfabd94400b24f8f5667816312535_chunk_0","title":"ECCV上，顶尖学者们开始研究如何让AI做生意了","source":"量子位","gold":false},{"id":"5a63d99cda09beb987dde7b502599594554e53d0add376eb53933d6c08a4f87c_chunk_0","title":"探索RSI，生数新世界模型让机器人开始自我进化","source":"量子位","gold":false},{"id":"f97d718cd28321f14029fcdca7500bcb163b1dfadda6f008e91e6fda78986ed9_chunk_1","title":"The Unbearable Weight: Scaling Models and Methods for UAV Audio ","source":"Arxiv SD","gold":false},{"id":"115f0131ff36f29ae324b16bf62cf883f51baefe46ab9b1f885059c4092845b1_chunk_0","title":"使用 Hugging Face 推理终端搭建强大的“语音识别 + 说话人分割 + 投机解码”工作流","source":"联网搜索","gold":false},{"id":"fdce5a3b400293f1f323da9c7f81420755b7da8eb6185b2950c0df08ad7b7224_chunk_0","title":"Direct Preference Density Alignment for Conversational Audio Equ","source":"Arxiv SD","gold":false},{"id":"99ece13e787f34878e1aa51dbddbb5225faf52df17b97b47f26c7a12faad004a_chunk_13","title":"v0.28.0","source":"vLLM Releases","gold":false},{"id":"5dd4fefb63b79fc2d77c810e419e7f7da7d0d923b62c8b630f10ca0d56022f05_chunk_0","title":"探索RSI，生数新世界模型让机器人开始自我进化","source":"量子位","gold":false},{"id":"5ea1503fa8e6ce3596cd6870e8a0f83d6b8a4bba4a873c9d12b8d887d21f5623_chunk_0","title":"bojieli/ai-infra-book","source":"GitHub Trending","gold":true},{"id":"f9f9cf24fafdd4b58299f95eb6e00b07274de1d9729e25ee3fc8fb9b0c3eb456_chunk_0","title":"7名博士生仅用3个月从零训练7B大模型：代码+数据+训练日志全公开","source":"量子位","gold":false},{"id":"448701fe99745f6407d1f9b23e42fccd2eb4024678bc0261d1b932b6823732fb_chunk_6","title":"v0.29.0","source":"vLLM Releases","gold":true},{"id":"55429f33fb8a4ccf4cdcacd9cb579c7fffad6dab5ec2b55119a1ca61056907ef_chunk_0","title":"TimeThink: Eliciting Compositional Reasoning in Timeseries Large","source":"Arxiv AI","gold":false},{"id":"9c88a1dca9a2a0439068a9f943233904b7176441274b959b704a98cc8708f464_chunk_0","title":"GitHub - QuantumNous/new-api: A unified AI model hub for aggrega","source":"联网搜索","gold":false},{"id":"6a31b5f2300364c38915c50957d069165e916a7738527c0adc91bf6b7dd4fe2d_chunk_0","title":"Meta新研究：字节模型蒸馏后，天花板破了","source":"量子位","gold":false},{"id":"99ece13e787f34878e1aa51dbddbb5225faf52df17b97b47f26c7a12faad004a_chunk_12","title":"v0.28.0","source":"vLLM Releases","gold":false},{"id":"4076ce7f4a9bec10f5b6b269d0a23f20847467a62ff0e5f59793481c76518a68_chunk_1","title":"Online Algorithms for Independent Low-Rank Matrix Analysis and R","source":"Arxiv SD","gold":false},{"id":"99ece13e787f34878e1aa51dbddbb5225faf52df17b97b47f26c7a12faad004a_chunk_6","title":"v0.28.0","source":"vLLM Releases","gold":false},{"id":"bfa2ffb71b450eeca553c53fb690d0b7b86965dbe9c5657b78e507250b37a26c_chunk_0","title":"LLM Updates (September 2026) - AI Model Releases & Provider Acti","source":"联网搜索","gold":false},{"id":"c26952f74cf009c76d66841fab2a1d8280566b6f115de2e6214c98a039a0bef3_chunk_0","title":"虚幻引擎CEO围观最新世界模型：代码驱动，视频模型生成画面","source":"新智元","gold":false},{"id":"0f241c3fbba8f436cbc49105089a3cca04ad1cc959d5078997d39250ecbdce02_chunk_0","title":"Quantifying the Memorization-to-Generalization Transition: Scali","source":"Arxiv AI","gold":false},{"id":"40c9bb5e2424eaba22c4a2a07b69a0abbbbe49c8237693d08d0e6dd6d6b059fb_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false}],"bm25":[{"id":"9b96bf51c55ef20a352e8a860d850516077beed24628fce2311ac412b079d7b8_chunk_0","title":"AI开始改进“改进自己的方法”，RSI进入平方时代丨MetaRSI","source":"量子位","gold":false},{"id":"a88747cadae724c33c14d38f41a6f957390f4229dd5ce22a18f4fb93fc778790_chunk_0","title":"把记忆交给CPU，大模型会变快","source":"量子位","gold":false},{"id":"9beec27f02f73e6565d772343eabc5eb415710a21e3b5e32ef2e407bfbdc2851_chunk_0","title":"智谱提前剧透GLM-6.0：完全自训练方法公开了","source":"量子位","gold":false},{"id":"2eb52ae29bf6f55b5f1f012c529212a9cef16570fe5fcb63ce23a8230dbb670d_chunk_0","title":"AI大模型工场2026 AI产业生态大会今日举办，大咖同台共探智能生长与产业共生","source":"量子位","gold":false},{"id":"17153119086b3c25578859952da04b0fb1461136705d70d90bfa8321c97f2971_chunk_0","title":"菲尔兹奖得主入局大模型！4B手机Qwen+云端GLM刷爆ARC-AGI 3","source":"量子位","gold":false},{"id":"e577a119c623db2ac05149e1354f3a969c1f4d9347ce3ab0d205cde3f46fc63c_chunk_0","title":"仅成立4个月，这家中国公司的全原子生物基础大模型登顶全球","source":"新智元","gold":false},{"id":"f9f9cf24fafdd4b58299f95eb6e00b07274de1d9729e25ee3fc8fb9b0c3eb456_chunk_0","title":"7名博士生仅用3个月从零训练7B大模型：代码+数据+训练日志全公开","source":"量子位","gold":false},{"id":"5ea1503fa8e6ce3596cd6870e8a0f83d6b8a4bba4a873c9d12b8d887d21f5623_chunk_0","title":"bojieli/ai-infra-book","source":"GitHub Trending","gold":true},{"id":"278c597a6f28a08144b88bb31cf02b17c4d95b59c1565235f7604e29578bf0dc_chunk_0","title":"首届蚂蚁灵波具身大模型挑战赛正式启动","source":"量子位","gold":false},{"id":"4f56864ed7094f60a43d8467dc6bf3fb8013bbbf5bc20bb1881e84c1bf86ead8_chunk_0","title":"B站AI无限竞技场今日上线！全球百大AI模型同场竞技，GPT-6高居榜首","source":"量子位","gold":false},{"id":"fa54297c1d6206550f0b2f5a2fb79a736ab98d00b0ba97a0ba4c547f0293d28b_chunk_0","title":"清华稳准智能联合发布LimiX-2，结构化数据基础模型登顶国际评测榜单","source":"量子位","gold":false},{"id":"a2a48844e8abe534fdf125f5528ed6241540c492f271f852f1d8aea2ca998e4a_chunk_0","title":"角色离场再回来，AI就换了个人？浙大、港大开源轻量化记忆路由器","source":"新智元","gold":true},{"id":"fc90565af8128535ef906bd37ce9c3e7f19848477f99e9bfa58a2cbefe04f9ab_chunk_0","title":"国产RSI模型交卷！Flash模型靠它反打旗舰","source":"量子位","gold":false},{"id":"799fc5e9e2c68ab9888497deb7fa45519a9841e52f983c604bbb31c736f82116_chunk_0","title":"王云鹤创业后交出首个模型","source":"量子位","gold":false},{"id":"c26952f74cf009c76d66841fab2a1d8280566b6f115de2e6214c98a039a0bef3_chunk_0","title":"虚幻引擎CEO围观最新世界模型：代码驱动，视频模型生成画面","source":"新智元","gold":false},{"id":"71419f4c7fe8c04ba49b0bf66a61816186d8dcebe6eea6fd700a2d859e4ed241_chunk_0","title":"一周连发6个模型！这家公司把具身智能的闭环跑通了","source":"量子位","gold":false},{"id":"5a63d99cda09beb987dde7b502599594554e53d0add376eb53933d6c08a4f87c_chunk_0","title":"探索RSI，生数新世界模型让机器人开始自我进化","source":"量子位","gold":false},{"id":"40c9bb5e2424eaba22c4a2a07b69a0abbbbe49c8237693d08d0e6dd6d6b059fb_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"fc7f57e2dad081ee64d2f1c73d591a0e66ab6dca6f0f401d5844124ccb24ae35_chunk_0","title":"本地使用whisper模型实现语音识别 - 知乎","source":"联网搜索","gold":false},{"id":"6a31b5f2300364c38915c50957d069165e916a7738527c0adc91bf6b7dd4fe2d_chunk_0","title":"Meta新研究：字节模型蒸馏后，天花板破了","source":"量子位","gold":false},{"id":"727cb1b8abd714a58e4829f59cf669464caef48bdeab23325d74e8b31a4cbe45_chunk_0","title":"蚂蚁百灵发布首个金融增强模型，AI开始进入真实投研工作流","source":"量子位","gold":false},{"id":"5dd4fefb63b79fc2d77c810e419e7f7da7d0d923b62c8b630f10ca0d56022f05_chunk_0","title":"探索RSI，生数新世界模型让机器人开始自我进化","source":"量子位","gold":false},{"id":"30675330f8d20716912c7a0ac7a6a9f2b866be9c2939467d01ae247766843f26_chunk_0","title":"这个新开源的世界模型只有1.3B，单卡就能实时跑！","source":"量子位","gold":false},{"id":"ae7c36e9548ece3e5a098ad1f05e797f1a610661b78f7fbc5cc8bd3c0d3c155b_chunk_0","title":"全球首个3D原生城市世界模型ABot-Earth 0.7发布，构建AI理解真实世界的入口","source":"量子位","gold":false},{"id":"76f3a2138bf0abdce707eb3b8a404d2a6e91ce960703e9cb4d13ca665abae049_chunk_0","title":"全球AI视频榜单第一梯队再添中国力量：智象发布首款物理规律导向视频模型","source":"量子位","gold":false},{"id":"1a6a16a3c147df457914115dafbef8112295c22dcfbaa0005a5507114e428956_chunk_0","title":"原生全模态技术战略闭环，智象（HiDream.ai）发布具身世界模型HiDream-O1-Embodied","source":"量子位","gold":false},{"id":"c4a84c5e693c67e3e4576c52a2993c71ecee441ffc685ebd77519717a340bb9b_chunk_0","title":"AGI时代的第一个生图模型，ChatGPT Images 2.5上线","source":"量子位","gold":false},{"id":"3aec261a086b4810e8dcf3e6ee182cf3f92e371a1121500b10304069b9547885_chunk_0","title":"2000+真实场景搬进仿真！一个导航模型零样本“通吃”四种机器人本体","source":"量子位","gold":false},{"id":"115f0131ff36f29ae324b16bf62cf883f51baefe46ab9b1f885059c4092845b1_chunk_0","title":"使用 Hugging Face 推理终端搭建强大的“语音识别 + 说话人分割 + 投机解码”工作流","source":"联网搜索","gold":false},{"id":"626ace6a9bfaa62f81f2608ccf60ec1e858ed30e988c8eeb16c88864f273ba5a_chunk_0","title":"Whisper 简介 - OpenAI","source":"联网搜索","gold":false},{"id":"ef25fb4a66b5d402be69acef5c82996e68eb41d801b38541f1bb00193de59a19_chunk_0","title":"罗福莉沉寂半年官宣小米强化学习！直播新模型训练过程，一小时烧3万美元","source":"量子位","gold":false},{"id":"ec92a5efd4536dff7fcac49ab29b7675705b391788b4103f2df86e686a13ec0f_chunk_0","title":"低延迟实时语音识别（ASR）模型部署实践与选型 | 亚马逊AWS官方博客","source":"联网搜索","gold":false}]},{"id":"B22","q":"对比 FunASR 和 sherpa-onnx 对流式识别的支持","why":"微妙的一题：问题里有专有名词，但懂意思的搜索其实已经找到了——所以「自动求助」正确地没有触发。这说明触发条件能分清「真需要帮忙」和「不用帮忙」。","keywords":["streaming","流式"],"trigger":{"tokens":["FunASR","sherpa-onnx"],"covered":true,"checked":8,"hit_rank":1,"hit_title":"FunASR v1.4.14"},"verdicts":{"dense":{"kind":"实质回答","len":845},"always":{"kind":"长拒答","len":349},"auto":{"kind":"实质回答","len":1509},"auto_l15":{"kind":"实质回答","len":1179}},"dense":[{"id":"1a9629055ad5d24371830fc76666511cfb27fd1d44f997ff71454fce6500d5bc_chunk_1","title":"FunASR v1.4.14","source":"FunASR Releases","gold":false},{"id":"dbf45882e70837336dadf2c4b9919a59c556f93caf95404358348c9bdb428425_chunk_2","title":"funasr-onnx 0.4.3","source":"FunASR Releases","gold":false},{"id":"6b4ae81c16947d1f2e7da2757f1bcec0e04bf3a98827855e7ea3156662be590b_chunk_0","title":"v1.4.15","source":"FunASR Releases","gold":true},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_4","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"1385db1341fbcbc6b6d6cda6c936c6c8556fb98c682b1e9ccb1b294c1ebb0cc7_chunk_0","title":"FunASR llama.cpp runtime v0.2.6","source":"FunASR Releases","gold":false},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_12","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"7a11956b49d79b686aabe11c38e31d5c7f61a02c1df44412497ee067d8006009_chunk_2","title":"FunASR 1.4.10","source":"FunASR Releases","gold":false},{"id":"222f226025a78d99b4454e6bb873fd9f93ca7af16e0923efc1ee1b3af6d95e56_chunk_0","title":"asr-models-qnn-binary-3","source":"sherpa-onnx Releases","gold":false},{"id":"9d68be1acb729d0259753121271d0c2dac08e48a5124fb8b553e6f376375848d_chunk_0","title":"asr-models-qnn-3","source":"sherpa-onnx Releases","gold":false},{"id":"7a11956b49d79b686aabe11c38e31d5c7f61a02c1df44412497ee067d8006009_chunk_1","title":"FunASR 1.4.10","source":"FunASR Releases","gold":false},{"id":"1a9629055ad5d24371830fc76666511cfb27fd1d44f997ff71454fce6500d5bc_chunk_2","title":"FunASR v1.4.14","source":"FunASR Releases","gold":false},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_8","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"40c9bb5e2424eaba22c4a2a07b69a0abbbbe49c8237693d08d0e6dd6d6b059fb_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"2be94d5b30ff34e12b9826fbed59c2797e9c09dca1ecc32743426c660cc9f37d_chunk_0","title":"v1.13.8","source":"sherpa-onnx Releases","gold":false},{"id":"1385db1341fbcbc6b6d6cda6c936c6c8556fb98c682b1e9ccb1b294c1ebb0cc7_chunk_2","title":"FunASR llama.cpp runtime v0.2.6","source":"FunASR Releases","gold":false},{"id":"ec92a5efd4536dff7fcac49ab29b7675705b391788b4103f2df86e686a13ec0f_chunk_0","title":"低延迟实时语音识别（ASR）模型部署实践与选型 | 亚马逊AWS官方博客","source":"联网搜索","gold":false},{"id":"1a9629055ad5d24371830fc76666511cfb27fd1d44f997ff71454fce6500d5bc_chunk_0","title":"FunASR v1.4.14","source":"FunASR Releases","gold":false},{"id":"9b97b551cc6bec1a2d3c0577dedd5c7a2d6d6b3670e4d5d03e05aca0a99f7f04_chunk_5","title":"v1.13.5","source":"sherpa-onnx Releases","gold":false},{"id":"5c323279db5a776f4bb98401d76a67a467c2db71cde2b7b25e95485304bc2173_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"27f2e0ed6cbe7a0253e1ff3f90518e944fe6b9d519b7cb689340f75687c3a644_chunk_0","title":"ASR神器：Whisper使用指南 - 知乎","source":"联网搜索","gold":false},{"id":"59081544b6f20eab926923c35310cd07d2be0a960d20e5117ecf9715ecc4d409_chunk_2","title":"v1.4.13","source":"FunASR Releases","gold":false},{"id":"e652a51380432de41d45c378631b5d0507a0d3f7b7fa5c6d30869899312e0f89_chunk_0","title":"v1.13.7","source":"sherpa-onnx Releases","gold":true},{"id":"9b97b551cc6bec1a2d3c0577dedd5c7a2d6d6b3670e4d5d03e05aca0a99f7f04_chunk_1","title":"v1.13.5","source":"sherpa-onnx Releases","gold":true},{"id":"c10da0505435e67000f2d1a3cae572898bf970f226078fda4060f79354ed1d53_chunk_2","title":"v1.4.8","source":"FunASR Releases","gold":false},{"id":"0040add4fe59e3a4f1f3569783a3a86dd58a831f62b9deb67339ac30c39c0c4e_chunk_0","title":"v1.4.12","source":"FunASR Releases","gold":false},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_9","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"99ece13e787f34878e1aa51dbddbb5225faf52df17b97b47f26c7a12faad004a_chunk_10","title":"v0.28.0","source":"vLLM Releases","gold":false},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_16","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"38aaa6381891847617d90fd9cdb5dc0cf3a73590d11fd9b0b4d3f618d1ccf8af_chunk_1","title":"v1.4.11","source":"FunASR Releases","gold":false},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_3","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"ab4a5f76564fcfd5e7004e84509869cd1c06898980c3550db0d3345f1cb9114d_chunk_0","title":"Python使用whisper实现语音识别（ASR） - CSDN博客","source":"联网搜索","gold":false},{"id":"dbf45882e70837336dadf2c4b9919a59c556f93caf95404358348c9bdb428425_chunk_0","title":"funasr-onnx 0.4.3","source":"FunASR Releases","gold":false}],"bm25":[{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_12","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_4","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"dbf45882e70837336dadf2c4b9919a59c556f93caf95404358348c9bdb428425_chunk_0","title":"funasr-onnx 0.4.3","source":"FunASR Releases","gold":false},{"id":"9d68be1acb729d0259753121271d0c2dac08e48a5124fb8b553e6f376375848d_chunk_0","title":"asr-models-qnn-3","source":"sherpa-onnx Releases","gold":false},{"id":"222f226025a78d99b4454e6bb873fd9f93ca7af16e0923efc1ee1b3af6d95e56_chunk_0","title":"asr-models-qnn-binary-3","source":"sherpa-onnx Releases","gold":false},{"id":"fc7f57e2dad081ee64d2f1c73d591a0e66ab6dca6f0f401d5844124ccb24ae35_chunk_0","title":"本地使用whisper模型实现语音识别 - 知乎","source":"联网搜索","gold":false},{"id":"5c323279db5a776f4bb98401d76a67a467c2db71cde2b7b25e95485304bc2173_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_3","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_11","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"40c9bb5e2424eaba22c4a2a07b69a0abbbbe49c8237693d08d0e6dd6d6b059fb_chunk_0","title":"ASR 自动语音识别技术与 Whisper 模型详解 | 极客日志","source":"联网搜索","gold":false},{"id":"dbf45882e70837336dadf2c4b9919a59c556f93caf95404358348c9bdb428425_chunk_2","title":"funasr-onnx 0.4.3","source":"FunASR Releases","gold":false},{"id":"dbf45882e70837336dadf2c4b9919a59c556f93caf95404358348c9bdb428425_chunk_1","title":"funasr-onnx 0.4.3","source":"FunASR Releases","gold":false},{"id":"1400e17104955955b3a1f9a7bc3f6d5a1650c67de1b6f924afb2d3bf83ba8fa0_chunk_0","title":"v1.13.4","source":"sherpa-onnx Releases","gold":false},{"id":"626ace6a9bfaa62f81f2608ccf60ec1e858ed30e988c8eeb16c88864f273ba5a_chunk_0","title":"Whisper 简介 - OpenAI","source":"联网搜索","gold":false},{"id":"2be94d5b30ff34e12b9826fbed59c2797e9c09dca1ecc32743426c660cc9f37d_chunk_0","title":"v1.13.8","source":"sherpa-onnx Releases","gold":false},{"id":"43c28549258b954fcd17dca7b9c373cea20772be67cd17a192f5053c927b02b7_chunk_0","title":"OpenAI年内不上市了！奥特曼支持对手Dario呼吁：AI该踩刹车了","source":"量子位","gold":false},{"id":"b3ced718b31af79f54af172f7054c9d6237187a77a6e4e8cc7b200262fec3239_chunk_4","title":"tauri","source":"sherpa-onnx Releases","gold":false},{"id":"ab4a5f76564fcfd5e7004e84509869cd1c06898980c3550db0d3345f1cb9114d_chunk_0","title":"Python使用whisper实现语音识别（ASR） - CSDN博客","source":"联网搜索","gold":false},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_8","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"240486aeb57f44d137a7879d6800145b438988623d24b178f4ee1cace8597034_chunk_9","title":"flutter","source":"sherpa-onnx Releases","gold":true},{"id":"9b97b551cc6bec1a2d3c0577dedd5c7a2d6d6b3670e4d5d03e05aca0a99f7f04_chunk_2","title":"v1.13.5","source":"sherpa-onnx Releases","gold":false},{"id":"90d2b583d2e059051c1e10e7a0066ea83985c0ccb47f83dbe42d5c3674bf298c_chunk_0","title":"语音识别项目whisper - MaskerFan - 博客园","source":"联网搜索","gold":false},{"id":"9b97b551cc6bec1a2d3c0577dedd5c7a2d6d6b3670e4d5d03e05aca0a99f7f04_chunk_0","title":"v1.13.5","source":"sherpa-onnx Releases","gold":true},{"id":"590ac807f390605ece12020660be1e4db5863b76cae7fe82911787a3285bf9d8_chunk_0","title":"v1.13.6","source":"sherpa-onnx Releases","gold":false},{"id":"1a9629055ad5d24371830fc76666511cfb27fd1d44f997ff71454fce6500d5bc_chunk_2","title":"FunASR v1.4.14","source":"FunASR Releases","gold":false},{"id":"1a9629055ad5d24371830fc76666511cfb27fd1d44f997ff71454fce6500d5bc_chunk_1","title":"FunASR v1.4.14","source":"FunASR Releases","gold":false},{"id":"c10da0505435e67000f2d1a3cae572898bf970f226078fda4060f79354ed1d53_chunk_2","title":"v1.4.8","source":"FunASR Releases","gold":false},{"id":"6b4ae81c16947d1f2e7da2757f1bcec0e04bf3a98827855e7ea3156662be590b_chunk_5","title":"v1.4.15","source":"FunASR Releases","gold":false},{"id":"0040add4fe59e3a4f1f3569783a3a86dd58a831f62b9deb67339ac30c39c0c4e_chunk_2","title":"v1.4.12","source":"FunASR Releases","gold":false},{"id":"63a1de334ffd0769f49506450e471bac485da991e831dad301e037f3d547669f_chunk_3","title":"v1.4.9","source":"FunASR Releases","gold":false},{"id":"59081544b6f20eab926923c35310cd07d2be0a960d20e5117ecf9715ecc4d409_chunk_3","title":"v1.4.13","source":"FunASR Releases","gold":false},{"id":"38aaa6381891847617d90fd9cdb5dc0cf3a73590d11fd9b0b4d3f618d1ccf8af_chunk_1","title":"v1.4.11","source":"FunASR Releases","gold":false}]},{"id":"B27","q":"同时提到 Agent 和知识检索的论文在解决什么问题？","why":"诚实说明题：它看上去像是「求助+1.5」的加分题，其实「自动求助」根本没有触发（Agent 已被懂意思的搜索在第 1 条找到）——前后走的都是纯语义路径，结果差异来自生成的随机波动。报告里把它标注为「含随机性成分」，不算机制性修复。","keywords":["agent"],"trigger":{"tokens":["Agent"],"covered":true,"checked":8,"hit_rank":1,"hit_title":"LabAgent: Customize Any Research Hubs for Scient"},"verdicts":{"dense":{"kind":"长拒答","len":623},"always":{"kind":"实质回答","len":584},"auto":{"kind":"长拒答","len":493},"auto_l15":{"kind":"实质回答","len":681}},"dense":[{"id":"cd45510053afd973c2b5ad98494e405828039078af56ada543dad59dd77a055a_chunk_0","title":"LabAgent: Customize Any Research Hubs for Scientific Discoveries","source":"Arxiv AI","gold":true},{"id":"cd45510053afd973c2b5ad98494e405828039078af56ada543dad59dd77a055a_chunk_1","title":"LabAgent: Customize Any Research Hubs for Scientific Discoveries","source":"Arxiv AI","gold":true},{"id":"e3e322baa29679c3944dd7808d3835746093fabee8dba5eda85026e2f2c2947b_chunk_1","title":"Benchmarking Hybrid Deep Research Across Database Querying and W","source":"Arxiv CL","gold":true},{"id":"79157104d000832c225b3164efc2dc3e76bf18a7f0fa0c60990cf0892af28cd7_chunk_0","title":"Agents API 🤖, Cognition SWE-2 👨‍💻, Muse Shared Agents 🧑‍🤝‍🧑","source":"TLDR AI","gold":true},{"id":"b6bb9341088f095442de1a74399cf3b7f18543efbdba973ae61774083f821ac5_chunk_0","title":"Panniantong/Agent-Reach","source":"GitHub Trending","gold":true},{"id":"3784d7aba9718af9aa1923cc7e21d6332b37aba7cf0db2607f02e2b6f30a7e79_chunk_0","title":"Research acceleration: The view inside OpenAI","source":"OpenAI Blog","gold":true},{"id":"a8dcc4b3bd3007d873c9ad7d87ae5fcd3b8be2223f89e37d7cc8e2ce1d69dba7_chunk_1","title":"GraphEcho: Structural Redundancy and Evidence Provenance in LLM ","source":"Arxiv AI","gold":true},{"id":"64c5811fe5835ec5531872a9d8ea7df9d0f9c7efc0e905096bbfe1dd6a412939_chunk_2","title":"Root-Cause Attribution Is a Search Problem: Continual Search for","source":"Arxiv AI","gold":true},{"id":"237c7009abd8b33e23f39b298b9ca42b0485011719d79f396b29358d4c5605b5_chunk_0","title":"央企做了个通用Agent，直接杀进IDC实测前三！","source":"量子位","gold":true},{"id":"032557b1fba3aa9cdaa4659a6cb5fd0745dc7eb67b46fe29290386bd815c14c9_chunk_0","title":"Iris: Climbing to the Search Frontier","source":"Arxiv AI","gold":true},{"id":"c9c36d9e98c5bf408cafb1a14ebbee51298c584c6694d58118283ae8a9c7b83f_chunk_0","title":"Subagents vs Agent Skills: Executing Reusable Knowledge for Long","source":"Arxiv AI","gold":true},{"id":"8c605fba588611a860dcbcbdea533e4b706c51f53a98a9e92cd44635f5a7a6d5_chunk_1","title":"When Agent Governance Helps","source":"Arxiv CL","gold":true},{"id":"38fae5f8610574ff4fd8316869fcbc3b8fc6255585780e66081f19872a11c6f6_chunk_1","title":"ZGCM-1: A Fully Open and Extremely Efficient Foundation Model fo","source":"Arxiv AI","gold":true},{"id":"a8dcc4b3bd3007d873c9ad7d87ae5fcd3b8be2223f89e37d7cc8e2ce1d69dba7_chunk_0","title":"GraphEcho: Structural Redundancy and Evidence Provenance in LLM ","source":"Arxiv AI","gold":true},{"id":"975098c11a0f89bbc58bef6dff0a84fd0eceae18f782045ffac5b5a1e75003d1_chunk_0","title":"今年外滩最特别Agent：能干活，能陪聊，还会朋友圈拉黑你","source":"量子位","gold":true},{"id":"93866fff22824e2e1f32116eb64375065b5178f7b96b732b045bd1a2955dc5da_chunk_0","title":"Generalized Agent Iteration: One Formal Framework for Iterative ","source":"Arxiv AI","gold":true},{"id":"d7ad2daa0d17484664720ccb23d430d9248062e0d895a3fda7769e8703a325b7_chunk_0","title":"HARP: Agentic Hybrid Retrieval and Analysis for Long-Form Audio","source":"Arxiv AS","gold":true},{"id":"a1d018f16fad79f97456f75bff3df416e35d9a73410b1735dcbcc9bb4c30fb83_chunk_0","title":"Your Agent Aced the Task. Will It Do It Again?","source":"Hugging Face Blog","gold":true},{"id":"b18e08e68fb5b4a990b9e7599918918703e1eacf29af341ef6cf0b7346107b51_chunk_1","title":"SpecOpt: Contact-Diff Reasoning for Agentic Molecule Optimizatio","source":"Arxiv AI","gold":true},{"id":"293f719eee499768005376abb2d0f14423ac2065b4c091db8b87f08e60991f04_chunk_0","title":"Do Agents Know When They Succeed? Calibrating Agent Confidence f","source":"Arxiv AI","gold":true},{"id":"7a38e752cb9c62ec119c51a98dc044544133cf11e3b0ba6c7ac103cce95185e6_chunk_0","title":"Finishing the Task Is Not Enough: Evaluating Agent Resilience an","source":"Arxiv AI","gold":true},{"id":"4c749fffac0adbefd9a5e3a6012a945fd65ddc4f4cc7795c055407ffceb8f11c_chunk_0","title":"国产数据库跑出AI新能力！OceanBase登顶国际Data Agent榜单","source":"量子位","gold":true},{"id":"881b24d9bfd5bff7ecee086a90773edc4ce749c10693133349978cab29736587_chunk_1","title":"Harbor Adapters and Harbor-Index: Infrastructure and a Curated M","source":"Arxiv AI","gold":true},{"id":"2de3b9a309072a9c64b079675a35164d294c4ed1d0f747fc20f11b228f62a7c2_chunk_1","title":"Who Maintains Agent Skills? A Longitudinal Study of Human-Govern","source":"Arxiv CL","gold":true},{"id":"0472ef77242908dc4b95895b29d23f87ca80c17a5713c08f949cb9a946681357_chunk_0","title":"OpenAI managed agents 🤖, TPU inference ⚡, Anthropic $517B comput","source":"TLDR AI","gold":true},{"id":"c9c36d9e98c5bf408cafb1a14ebbee51298c584c6694d58118283ae8a9c7b83f_chunk_1","title":"Subagents vs Agent Skills: Executing Reusable Knowledge for Long","source":"Arxiv AI","gold":true},{"id":"7a38e752cb9c62ec119c51a98dc044544133cf11e3b0ba6c7ac103cce95185e6_chunk_1","title":"Finishing the Task Is Not Enough: Evaluating Agent Resilience an","source":"Arxiv AI","gold":true},{"id":"881b24d9bfd5bff7ecee086a90773edc4ce749c10693133349978cab29736587_chunk_0","title":"Harbor Adapters and Harbor-Index: Infrastructure and a Curated M","source":"Arxiv AI","gold":true},{"id":"f1737a2da6e0c94eb5b62c855db8612d2699cba17f2b818ed781f3484818363e_chunk_0","title":"HarvestBench: Measuring Whether LLM Agents Will Pay to Avoid Kil","source":"Arxiv AI","gold":true},{"id":"8c605fba588611a860dcbcbdea533e4b706c51f53a98a9e92cd44635f5a7a6d5_chunk_0","title":"When Agent Governance Helps","source":"Arxiv CL","gold":true},{"id":"032557b1fba3aa9cdaa4659a6cb5fd0745dc7eb67b46fe29290386bd815c14c9_chunk_1","title":"Iris: Climbing to the Search Frontier","source":"Arxiv AI","gold":true},{"id":"d194bd04836e625acb1045ebc56d469c4cc77b6bbbe9ea6634c817c67deedc47_chunk_0","title":"From Matching Models to Recruiting Agents: A Systematized Narrat","source":"Arxiv AI","gold":true}],"bm25":[{"id":"c1d961027b22201cd1f14afd0357a2da9898032878353f7040a246999bf79dc0_chunk_0","title":"A社承认Claude安全对齐存在缺陷，但“尚无解决方案”","source":"量子位","gold":false},{"id":"54b87b11265ab60c30c4d9e80b290de03d0134d987166ec332bf8e18ffe14495_chunk_0","title":"前OpenAI后训练VP回应陶哲轩：说AI毁了数学，可能还是太小瞧AI了","source":"量子位","gold":false},{"id":"31c3e9ec4b0c53a30e73c588e21c16c425fe935610a252f0f86c1ccd87814951_chunk_0","title":"陶哲轩邓煜究竟在反对什么：AI暴力解题摧毁人类数学精神","source":"量子位","gold":false},{"id":"0fe2b7204ab8d4404e88d3c16549b3495b36c202d844fbaa3bb987ba00c77127_chunk_0","title":"西门子不造机器人，为什么机器人进厂的故事里总有它？","source":"量子位","gold":false},{"id":"9beec27f02f73e6565d772343eabc5eb415710a21e3b5e32ef2e407bfbdc2851_chunk_0","title":"智谱提前剧透GLM-6.0：完全自训练方法公开了","source":"量子位","gold":false},{"id":"bb186ef0144f2caf3bfbb4f496eddf09b1a687100c79aa753037c704d50e498d_chunk_0","title":"长三角安全人工智能安徽省实验室发布星界、星驭、星鉴三大AI安全解决方案","source":"量子位","gold":false},{"id":"9816345b0430e76f4e63ae2c0513825779ff1f55e02db227e9445ee5317bd395_chunk_0","title":"eternity4719/HowToLiveBetter","source":"GitHub Trending","gold":false},{"id":"fc7f57e2dad081ee64d2f1c73d591a0e66ab6dca6f0f401d5844124ccb24ae35_chunk_0","title":"本地使用whisper模型实现语音识别 - 知乎","source":"联网搜索","gold":false},{"id":"a2a48844e8abe534fdf125f5528ed6241540c492f271f852f1d8aea2ca998e4a_chunk_0","title":"角色离场再回来，AI就换了个人？浙大、港大开源轻量化记忆路由器","source":"新智元","gold":false},{"id":"ab4a5f76564fcfd5e7004e84509869cd1c06898980c3550db0d3345f1cb9114d_chunk_0","title":"Python使用whisper实现语音识别（ASR） - CSDN博客","source":"联网搜索","gold":false},{"id":"b6bb9341088f095442de1a74399cf3b7f18543efbdba973ae61774083f821ac5_chunk_0","title":"Panniantong/Agent-Reach","source":"GitHub Trending","gold":true},{"id":"90d2b583d2e059051c1e10e7a0066ea83985c0ccb47f83dbe42d5c3674bf298c_chunk_0","title":"语音识别项目whisper - MaskerFan - 博客园","source":"联网搜索","gold":false},{"id":"4c749fffac0adbefd9a5e3a6012a945fd65ddc4f4cc7795c055407ffceb8f11c_chunk_0","title":"国产数据库跑出AI新能力！OceanBase登顶国际Data Agent榜单","source":"量子位","gold":true},{"id":"220798052a2dd64e1f34218111eeff3212b28040456a469b59142ea275bedf69_chunk_0","title":"Claude Projects v2 💼, Google family agent 👨‍👩‍👧‍👦,","source":"TLDR AI","gold":true},{"id":"975098c11a0f89bbc58bef6dff0a84fd0eceae18f782045ffac5b5a1e75003d1_chunk_0","title":"今年外滩最特别Agent：能干活，能陪聊，还会朋友圈拉黑你","source":"量子位","gold":true},{"id":"a1d018f16fad79f97456f75bff3df416e35d9a73410b1735dcbcc9bb4c30fb83_chunk_0","title":"Your Agent Aced the Task. Will It Do It Again?","source":"Hugging Face Blog","gold":true},{"id":"c9c36d9e98c5bf408cafb1a14ebbee51298c584c6694d58118283ae8a9c7b83f_chunk_0","title":"Subagents vs Agent Skills: Executing Reusable Knowledge for Long","source":"Arxiv AI","gold":true},{"id":"93866fff22824e2e1f32116eb64375065b5178f7b96b732b045bd1a2955dc5da_chunk_0","title":"Generalized Agent Iteration: One Formal Framework for Iterative ","source":"Arxiv AI","gold":true},{"id":"0cfe4d849c9b73f422c92b5a52bcf2905a9df144eb23d22f580dddf19486ff91_chunk_0","title":"Meta debuts its Muse AI agent. Will consumers trust it?","source":"TechCrunch AI","gold":true},{"id":"237c7009abd8b33e23f39b298b9ca42b0485011719d79f396b29358d4c5605b5_chunk_0","title":"央企做了个通用Agent，直接杀进IDC实测前三！","source":"量子位","gold":true},{"id":"f8589638962be2997367611a6d4eca52404f857b441b5ead2965e87c6688359a_chunk_1","title":"An Autonomous GeoAI Agent for Arctic Eco-Navigation","source":"Arxiv AI","gold":true},{"id":"93866fff22824e2e1f32116eb64375065b5178f7b96b732b045bd1a2955dc5da_chunk_1","title":"Generalized Agent Iteration: One Formal Framework for Iterative ","source":"Arxiv AI","gold":true},{"id":"ad0e0ba9408b1016b66ab6177d08df56514ed03bfb61317ea2f53a63247c7b2c_chunk_0","title":"网易有道周枫：AI能力竞争，正在进入「Model + Agent + Workflow」时代，网易有道AI Open Day展示","source":"量子位","gold":true},{"id":"1400e17104955955b3a1f9a7bc3f6d5a1650c67de1b6f924afb2d3bf83ba8fa0_chunk_0","title":"v1.13.4","source":"sherpa-onnx Releases","gold":false},{"id":"c9c36d9e98c5bf408cafb1a14ebbee51298c584c6694d58118283ae8a9c7b83f_chunk_1","title":"Subagents vs Agent Skills: Executing Reusable Knowledge for Long","source":"Arxiv AI","gold":true},{"id":"0f8ea7ad3e0c82bc54f9812146a07170d505fc39bb1bc7f1960f1b0cd060a29b_chunk_0","title":"银行Agent上岗：4200万小微经营者可用，信贷、票据、财税一把梭","source":"量子位","gold":true},{"id":"278c044d522473dc40ff1a278dc615caa053cb171170e24837f9a006057291d5_chunk_0","title":"国内首份办公Agent用户行为报告发布：北京用户量全国居首，海外用户占比超12%","source":"量子位","gold":true},{"id":"8c605fba588611a860dcbcbdea533e4b706c51f53a98a9e92cd44635f5a7a6d5_chunk_2","title":"When Agent Governance Helps","source":"Arxiv CL","gold":true},{"id":"6b7aef76bdfa549056aec9c30ecfe8d54a6be65a566d166c01ca82c62c9c8384_chunk_0","title":"协同办公进入Agent时代，飞书+豆包工作跑在了最前面","source":"量子位","gold":true},{"id":"7a38e752cb9c62ec119c51a98dc044544133cf11e3b0ba6c7ac103cce95185e6_chunk_2","title":"Finishing the Task Is Not Enough: Evaluating Agent Resilience an","source":"Arxiv AI","gold":true},{"id":"2cb5af392fbc65a7ab54a2652f433a2775c292aa219c7113755e50a99e65c786_chunk_0","title":"Vibe Patenting: Evaluating LLM Judges for Professional Patent-Dr","source":"Arxiv AI","gold":true},{"id":"8c605fba588611a860dcbcbdea533e4b706c51f53a98a9e92cd44635f5a7a6d5_chunk_0","title":"When Agent Governance Helps","source":"Arxiv CL","gold":true}]}]};
+const RRF_K = 60;
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const state = { ci: 0, useDense: true, useBm25: true, auto: true, lam: 1.0, topk: 8 };
+const $ = id => document.getElementById(id);
+
+/* ── 工具 ── */
+function cur(){ return DATA.cases[state.ci]; }
+function bestGold(list, limit){
+  const n = limit === undefined ? list.length : Math.min(limit, list.length);
+  for (let i = 0; i < n; i++) if (list[i].gold) return i + 1;
+  return 0;
+}
+/* 自动求助判定：问题里有专有名词，且懂意思的搜索前 8 条都没找到 → 才请认字的搜索帮忙 */
+function autoFires(){
+  const c = cur();
+  if (!state.auto) return true;           // 关掉自动求助 → 只要勾了认字搜索就全程开
+  if (!state.useBm25) return false;
+  const T = c.trigger;
+  return T.tokens.length > 0 && !T.covered;
+}
+function bm25Effective(){ return state.useBm25 && autoFires(); }
+
+/* ── 合并名单（按名次加权） ── */
+function fuse(){
+  const c = cur(), scores = new Map(), src = new Map();
+  /* 自动求助触发时：固定用 1.5（与生产一致，不受滑杆影响）；手动全开等其他情况用滑杆值 */
+  const wD = (state.auto && bm25Effective()) ? 1 / 1.5 : 1 / state.lam, wB = 1.0;
+  if (state.useDense) c.dense.forEach((d, i) => {
+    scores.set(d.id, (scores.get(d.id) || 0) + wD / (RRF_K + i + 1));
+    src.set(d.id, "d");
+  });
+  if (bm25Effective()) c.bm25.forEach((d, i) => {
+    scores.set(d.id, (scores.get(d.id) || 0) + wB / (RRF_K + i + 1));
+    src.set(d.id, src.has(d.id) ? "db" : "b");
+  });
+  const byId = new Map([...c.dense, ...c.bm25].map(d => [d.id, d]));
+  return [...scores.entries()].map(([id, s]) => {
+    const d = byId.get(id);
+    return {...d, score: s, from: src.get(id)};
+  }).sort((a, b) => b.score - a.score);
+}
+
+/* ── 渲染 ── */
+function renderBoard(){
+  const S = [
+    {v:"35", c:"cc-g", n:"题答对 · 只用懂意思的搜索", d:"碰到冷门专有名词就抓瞎"},
+    {v:"38", c:"cc-r", n:"题答对 · 总是开两路搜索", d:"但其中有 2 题明确变差"},
+    {v:"37", c:"cc-p", n:"题答对 · 需要时才求助", d:"零变差，安全"},
+    {v:"38", c:"cc-k", n:"题答对 · 求助+偏向认字 1.5", d:"零变差，最终方案"},
+  ];
+  $("board").innerHTML = S.map(x => `<div class="metric"><div class="l">${x.n}</div><div class="m ${x.c}">${x.v}<span style="font-size:14px;color:var(--ink3)"> / 55</span></div><div class="e">${x.d}</div></div>`).join("");
+}
+function renderChips(){
+  $("qchips").innerHTML = DATA.cases.map((c, i) =>
+    `<span class="chip${i === state.ci ? " on" : ""}" role="button" tabindex="0" data-i="${i}">${c.q.length > 16 ? c.q.slice(0, 16) + "…" : c.q}</span>`
+  ).join("");
+  document.querySelectorAll("#qchips .chip").forEach(el => {
+    const go = () => { state.ci = +el.dataset.i; renderChips(); renderAll(); };
+    el.onclick = go;
+    el.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); } };
+  });
+}
+function itemHtml(d, rk, from){
+  const cls = ["item"];
+  if (d.gold) cls.push("gold");
+  if (from === "b") cls.push("rescued");
+  const badge = from ? `<span class="srcbadge ${from}">${from === "db" ? "两路都有" : from === "d" ? "懂意思" : "认字"}</span>` : "";
+  return `<div class="${cls.join(" ")}"><span class="rk">${rk}</span><span class="tt"><span class="ti">${d.title || "(无标题)"}</span><span class="sr">${d.source}</span></span>${badge}</div>`;
+}
+function renderAll(){
+  const c = cur();
+  $("sw-dense-box").className = "sw" + (state.useDense ? " on" : "");
+  $("sw-bm25-box").className = "sw" + (state.useBm25 ? " on" : "");
+  $("sw-auto-box").className = "sw" + (state.auto ? " on" : "");
+  renderTrig();
+
+  $("dense-n").textContent = `${c.dense.length} 条` + (state.useDense ? "" : "（已关闭）");
+  $("dense-list").innerHTML = c.dense.map((d, i) => itemHtml(d, i + 1, null)).join("");
+  $("bm25-n").textContent = `${c.bm25.length} 条` + (bm25Effective() ? "" : state.useBm25 ? "（本轮没让它上场）" : "（已关闭）");
+  $("bm25-list").innerHTML = c.bm25.map((d, i) => itemHtml(d, i + 1, null)).join("");
+
+  const f = fuse();
+  const top = f.slice(0, state.topk);
+  $("fk").textContent = state.topk;
+  $("fuse-n").textContent = `由 ${(state.useDense ? 1 : 0) + (bm25Effective() ? 1 : 0)} 路搜索合成`;
+  $("fuse-list").innerHTML = top.map((d, i) => itemHtml(d, i + 1, d.from)).join("") || `<div class="item"><span class="tt"><span class="sr">无结果（两条搜索都关了）</span></span></div>`;
+
+  const gD = bestGold(c.dense), gB = bestGold(c.bm25), gF = bestGold(top);
+  $("m-dense").innerHTML = gD ? `<span class="cc-g">第 ${gD} 名</span>` : `<span class="cc-r">没找到</span>`;
+  $("e-dense").textContent = `它的名单里共有 ${c.dense.filter(d => d.gold).length} 份正确答案资料`;
+  $("m-bm25").innerHTML = gB ? `<span class="cc-p">第 ${gB} 名</span>` : `<span class="cc-r">没找到</span>`;
+  $("e-bm25").textContent = `它的名单里共有 ${c.bm25.filter(d => d.gold).length} 份正确答案资料`;
+  $("m-fuse").innerHTML = gF ? `<span class="cc-k">第 ${gF} 名</span>` : `<span class="cc-r">挤出前 ${state.topk}</span>`;
+  $("e-fuse").textContent = gF ? `正确答案进了名单 → 大概率能答上` : `正确答案被挤出 → 大概率答不上`;
+
+  let mode = "只用懂意思的搜索";
+  if (bm25Effective()) mode = state.auto ? "自动求助：本轮请认字的搜索帮了忙" : "两条搜索全程一起开";
+  else if (state.useBm25) mode = "自动求助没触发：这道题不需要认字的搜索";
+  let lamTxt;
+  if (state.auto && bm25Effective()) lamTxt = `1.50 <span style="color:var(--ink3)">（自动求助触发，固定值）</span>`;
+  else if (!state.auto && state.useBm25 && state.useDense) lamTxt = `${state.lam.toFixed(2)} <span style="color:var(--ink3)">（手动全开，滑杆生效）</span>`;
+  else lamTxt = `${state.lam.toFixed(2)} <span style="color:var(--ink3)">（本轮未生效）</span>`;
+  $("modeline").innerHTML = `当前模式：<b>${mode}</b> ｜ 认字话语权 <span class="mono">${lamTxt}</span> ｜ 名单取前 <span class="mono">${state.topk}</span> 条`;
+
+  const V = c.verdicts;
+  const cards = [
+    ["dense", "只用懂意思的搜索"],
+    ["always", "两路全程都开"],
+    ["auto", "需要时才求助（平权 1.0）"],
+    ["auto_l15", "求助 + 偏向认字 1.5"],
+  ];
+  let closest = "dense";
+  /* 自动求助触发时权重固定为 1.5 → 对应 auto_l15 配置；手动全开对应 always */
+  if (bm25Effective()) closest = (!state.auto) ? "always" : "auto_l15";
+  $("vcards").innerHTML = cards.map(([k, label]) => {
+    const v = V[k];
+    const ok = v.kind === "实质回答";
+    return `<div class="vc${k === closest ? " cur" : ""}"><div class="t">${label}</div>
+      <div class="k ${ok ? "cc-k" : "cc-r"}">${ok ? "答上了" : "没答上"}</div><div class="d">${v.len} 字 ${ok ? "正经作答" : "回复“没提到”"}</div></div>`;
+  }).join("");
+  $("takeaway").innerHTML = "<b>这题的门道：</b>" + c.why;
+  renderTracks();
+}
+
+/* ── 判定三步动画 ── */
+let trigTimers = [], lastTrigKey = "";
+const sleep = ms => new Promise(r => { trigTimers.push(setTimeout(r, RM ? 0 : ms)); });
+
+function trigData(){
+  const T = cur().trigger, n = T.checked;
+  if (!T.tokens.length) return {
+    s1:{t:"看问题里有没有专有名词", d:"没有", cls:"warn"},
+    s2:{t:"检查懂意思的搜索找没找到", d:"不用查", cls:"skip", scan:null},
+    s3:{t:"结论：不求助，保持原样", sub:"大白话问题，认字的搜索帮不上忙", cls:"warn"}
+  };
+  if (T.covered) return {
+    s1:{t:"看问题里有没有专有名词", d:T.tokens.join(" / "), cls:"hit"},
+    s2:{t:`检查懂意思的搜索找没找到`, d:`第 ${T.hit_rank} 条就找到了 → 不用帮忙`, sub:T.hit_title, cls:"hit", scan:{n, hit:T.hit_rank}},
+    s3:{t:"结论：不求助，保持原样", sub:"已经找到了，多此一举反而添乱", cls:"warn"}
+  };
+  return {
+    s1:{t:"看问题里有没有专有名词", d:T.tokens.join(" / "), cls:"hit"},
+    s2:{t:`检查懂意思的搜索找没找到`, d:`翻完前 ${n} 条 · 一份相关都没有`, sub:"检查范围：标题 + 正文开头", cls:"warn", scan:{n, hit:0}},
+    s3:{t:"结论：请认字的搜索帮忙", sub:"并把认字话语权临时调到 1.5", cls:"act"}
+  };
+}
+function renderTrigNote(){
+  let note;
+  if (!state.auto) note = "自动求助已关：下面判定不生效，认字搜索全程开";
+  else if (!state.useBm25) note = "认字搜索已被手动关闭：本轮帮不上忙";
+  else note = autoFires() ? "当前状态：本轮求助了" : "当前状态：没求助";
+  $("trignote").textContent = note;
+}
+function renderTrig(){
+  const D = trigData(), key = JSON.stringify(D);
+  renderTrigNote();
+  if (key === lastTrigKey) return;
+  lastTrigKey = key;
+  const card = (i, o) => `<div class="tstep" id="ts${i}">
+      <div class="no">第 ${["一","二","三"][i-1]} 步</div>
+      <div class="tt">${o.t}</div>
+      <div class="td">${o.d}</div>
+      ${o.scan ? `<div class="scan">${Array.from({length:o.scan.n},(_,k)=>`<i data-i="${k+1}"></i>`).join("")}</div>` : ""}
+      ${o.sub ? `<div class="tsub">${o.sub}</div>` : ""}
+    </div>`;
+  $("trigflow").innerHTML = card(1, D.s1) + `<span class="tarrow" id="ta1">➜</span>`
+    + card(2, D.s2) + `<span class="tarrow" id="ta2">➜</span>` + card(3, D.s3);
+  playTrig(D);
+}
+async function playScan(sc){
+  if (!sc) return;
+  const cells = [...document.querySelectorAll("#ts2 .scan i")];
+  for (let i = 0; i < cells.length; i++){
+    const c = cells[i];
+    if (sc.hit && i + 1 === sc.hit){ c.classList.add("hit"); await sleep(420); return; }
+    c.classList.add("lit");
+    await sleep(95);
+    c.classList.remove("lit");
+    c.classList.add("chk");
+  }
+}
+async function playTrig(D){
+  trigTimers.forEach(clearTimeout); trigTimers = [];
+  D = D || trigData();
+  const s = [$("ts1"), $("ts2"), $("ts3")], ar = [$("ta1"), $("ta2")];
+  s.forEach(el => el && el.classList.remove("on","done","hit","warn","skip","act"));
+  ar.forEach(el => el && el.classList.remove("on"));
+  document.querySelectorAll("#ts2 .scan i").forEach(i => i.classList.remove("lit","hit","chk"));
+  await sleep(140); s[0].classList.add("on");
+  await sleep(520); s[0].classList.remove("on"); s[0].classList.add("done", D.s1.cls);
+  ar[0].classList.add("on");
+  await sleep(300); s[1].classList.add("on");
+  await playScan(D.s2.scan);
+  s[1].classList.remove("on"); s[1].classList.add("done", D.s2.cls);
+  ar[1].classList.add("on");
+  await sleep(300); s[2].classList.add("on");
+  await sleep(560); s[2].classList.remove("on"); s[2].classList.add("done", D.s3.cls);
+}
+
+/* ── 排名轨道 ── */
+function renderTracks(){
+  const c = cur(), f = fuse(), tk = state.topk;
+  function rail(list, opts){
+    const total = list.length;
+    const golds = [];
+    list.forEach((d, i) => { if (d.gold) golds.push(i + 1); });
+    if (!golds.length) return `<div class="rail"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--ink3)">没有正确答案落入</span></div>`;
+    const best = golds[0];
+    let h = `<div class="rail">`;
+    h += golds.map(rk => {
+      const pct = Math.min(100, Math.max(0, (rk - 1) / Math.max(1, total - 1) * 100));
+      const out = opts.outside && rk > tk;
+      return `<i class="${rk === best ? "best " : ""}${out ? "out" : ""}" style="left:${pct.toFixed(1)}%"></i>`;
+    }).join("");
+    if (opts.edge){
+      const ep = Math.min(98, (tk - 0.5) / Math.max(1, total - 1) * 100);
+      h += `<span class="edge" style="left:${ep.toFixed(1)}%"></span>`;
+      h += `<em class="elab" style="left:${ep.toFixed(1)}%${ep > 78 ? ";transform:translateX(-100%)" : ""}">名单截止线（前 ${tk} 条）</em>`;
+    }
+    return h + `</div>`;
+  }
+  const m1 = c.dense.filter(d => d.gold).length;
+  const m2 = c.bm25.filter(d => d.gold).length;
+  const mf = f.filter(d => d.gold).length;
+  const b1 = bestGold(c.dense), b2 = bestGold(c.bm25), bf = bestGold(f), bft = bestGold(f.slice(0, tk));
+  const t1 = m1 ? `${m1} 份 · 最好的在第 ${b1} 名` : "没进它的名单";
+  const t2 = m2 ? `${m2} 份 · 最好的在第 ${b2} 名` : "没进它的名单";
+  const t3 = mf
+    ? `${mf} 份 · 最好的在第 ${bf} 名` + (bft ? ` · 在名单内，能答上` : ` · 被挤出名单`)
+    : "没进合并名单";
+  $("tracks").innerHTML = `
+    <div class="th">正确答案（黄点）在三条名单里的位置 —— <b>越靠左越好</b>；大号黄点 = 该路最好成绩；合并轨道的绿线 = 名单截止线（拖动「取几条」滑杆会移动）</div>
+    <div class="track"><span class="tl">懂意思</span>${rail(c.dense, {})}<span class="te">${t1}</span></div>
+    <div class="track"><span class="tl">认字</span>${rail(c.bm25, {})}<span class="te">${t2}</span></div>
+    <div class="track"><span class="tl">合并后</span>${rail(f, {edge:true, outside:true})}<span class="te">${t3}</span></div>`;
+}
+
+/* ── 事件 ── */
+$("sw-dense").onchange = e => { state.useDense = e.target.checked; renderAll(); };
+$("sw-bm25").onchange = e => { state.useBm25 = e.target.checked; renderAll(); };
+$("sw-auto").onchange = e => { state.auto = e.target.checked; renderAll(); };
+$("lam").oninput = e => { state.lam = +e.target.value; $("lamv").textContent = state.lam.toFixed(2); renderAll(); };
+$("topk").oninput = e => { state.topk = +e.target.value; $("tkv").textContent = state.topk; renderAll(); };
+$("replay").onclick = () => playTrig();
+
+/* ── 初始化 ── */
+renderBoard();
+renderChips();
+renderAll();
+</script>
+</body>
+</html>

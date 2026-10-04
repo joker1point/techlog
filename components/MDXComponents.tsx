@@ -13,6 +13,8 @@ import Figure from './mdx/Figure'
 import PullQuote from './mdx/PullQuote'
 import Stat from './mdx/Stat'
 import StatGrid from './mdx/StatGrid'
+// 交互式实验室内嵌（2026-10-01）：iframe + 说明栏，见 faq/semantic-components.md
+import LabEmbed from './mdx/LabEmbed'
 
 type CodeLikeProps = { className?: string; children?: ReactNode }
 
@@ -71,4 +73,5 @@ export const components: MDXComponents = {
   Stat,
   StatGrid,
   PullQuote,
+  LabEmbed,
 }
