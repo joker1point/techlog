@@ -1,33 +1,35 @@
 'use client'
 
 import { useState } from 'react'
-import { usePathname } from 'next/navigation'
 import { CoreContent } from 'pliny/utils/contentlayer'
 import type { Blog } from 'contentlayer/generated'
 import Link from '@/components/Link'
 import PostEntry from '@/components/PostEntry'
 
+/** 页面构造的分页信息（当前页 / 总页数） */
 interface PaginationProps {
   totalPages: number
   currentPage: number
+}
+/** Pagination 组件的 props：分页信息 + 列表根路径 */
+interface PaginationRenderProps extends PaginationProps {
+  /** 分页链接的站内根路径（不含 basePath 前缀与 .html），如 `/blog` */
+  basePath: string
 }
 interface ListLayoutProps {
   posts: CoreContent<Blog>[]
   title: string
   initialDisplayPosts?: CoreContent<Blog>[]
   pagination?: PaginationProps
+  /** 当前列表的站内根路径，由页面显式传入（勿用 usePathname 推导，静态导出下客户端值带 basePath 与 .html） */
+  basePath: string
 }
 
-function Pagination({ totalPages, currentPage }: PaginationProps) {
-  const pathname = usePathname()
-  const basePath = pathname
-    .replace(/^\//, '') // Remove leading slash
-    .replace(/\/page\/\d+\/?$/, '') // Remove any trailing /page
-    .replace(/\/$/, '') // Remove trailing slash
+function Pagination({ totalPages, currentPage, basePath }: PaginationRenderProps) {
   const prevPage = currentPage - 1 > 0
   const nextPage = currentPage + 1 <= totalPages
   // 第 1 页不能写成 `/blog/`——全站 trailingSlash:false，带尾斜杠会 404
-  const pageHref = (n: number) => (n === 1 ? `/${basePath}` : `/${basePath}/page/${n}`)
+  const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}/page/${n}`)
 
   return (
     <nav className="mt-10 flex items-center justify-between border-t border-gray-200 pt-6 font-mono text-[12.5px] dark:border-gray-700/80">
@@ -65,6 +67,7 @@ export default function ListLayout({
   title,
   initialDisplayPosts = [],
   pagination,
+  basePath,
 }: ListLayoutProps) {
   const [searchValue, setSearchValue] = useState('')
   const filteredBlogPosts = posts.filter((post) => {
@@ -128,7 +131,11 @@ export default function ListLayout({
       </ul>
 
       {pagination && pagination.totalPages > 1 && !searchValue && (
-        <Pagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} />
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          basePath={basePath}
+        />
       )}
     </>
   )

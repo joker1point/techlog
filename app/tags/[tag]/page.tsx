@@ -58,6 +58,8 @@ export default async function TagPage(props: { params: Promise<{ tag: string }> 
       pagination={pagination}
       title={title}
       totalPosts={allBlogs.length}
+      basePath={`/tags/${slug(tag)}`}
+      activeTag={slug(tag)}
     />
   )
 }

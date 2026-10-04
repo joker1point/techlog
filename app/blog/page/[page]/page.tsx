@@ -39,6 +39,7 @@ export default async function Page(props: { params: Promise<{ page: string }> })
       pagination={pagination}
       title="全部文章"
       totalPosts={posts.length}
+      basePath="/blog"
     />
   )
 }

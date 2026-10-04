@@ -1,6 +1,5 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
 import { slug } from 'github-slugger'
 import { CoreContent } from 'pliny/utils/contentlayer'
 import type { Blog } from 'contentlayer/generated'
@@ -9,9 +8,15 @@ import PostEntry from '@/components/PostEntry'
 import Tag from '@/components/Tag'
 import tagData from 'app/tag-data.json'
 
+/** 页面构造的分页信息（当前页 / 总页数） */
 interface PaginationProps {
   totalPages: number
   currentPage: number
+}
+/** Pagination 组件的 props：分页信息 + 列表根路径 */
+interface PaginationRenderProps extends PaginationProps {
+  /** 分页链接的站内根路径（不含 basePath 前缀与 .html），如 `/blog`、`/tags/engineering` */
+  basePath: string
 }
 interface ListLayoutProps {
   posts: CoreContent<Blog>[]
@@ -20,18 +25,19 @@ interface ListLayoutProps {
   pagination?: PaginationProps
   /** 全站文章总数（侧栏「全部文章」显示用；tag 页的 posts 是过滤后的，不能拿来当总数） */
   totalPosts?: number
+  /** 当前列表的站内根路径，由页面显式传入。不要用 usePathname() 推导：静态导出（basePath + .html）
+   *  下它在客户端会返回带前缀与后缀的真实 URL（如 /techlog/blog.html），
+   *  推出来的分页链接会变成 `<list>.html/page/N.html` → 404（2026-10-03 修复） */
+  basePath: string
+  /** 当前激活的标签 slug（tag 页传入）；不传表示「全部文章」视图 */
+  activeTag?: string
 }
 
-function Pagination({ totalPages, currentPage }: PaginationProps) {
-  const pathname = usePathname()
-  const basePath = pathname
-    .replace(/^\//, '') // Remove leading slash
-    .replace(/\/page\/\d+\/?$/, '') // Remove any trailing /page
-    .replace(/\/$/, '') // Remove trailing slash
+function Pagination({ totalPages, currentPage, basePath }: PaginationRenderProps) {
   const prevPage = currentPage - 1 > 0
   const nextPage = currentPage + 1 <= totalPages
   // 第 1 页不能写成 `/blog/`——全站 trailingSlash:false，带尾斜杠会 404
-  const pageHref = (n: number) => (n === 1 ? `/${basePath}` : `/${basePath}/page/${n}`)
+  const pageHref = (n: number) => (n === 1 ? basePath : `${basePath}/page/${n}`)
 
   return (
     <nav className="mt-10 flex items-center justify-between border-t border-gray-200 pt-6 font-mono text-[12.5px] dark:border-gray-700/80">
@@ -75,12 +81,13 @@ export default function ListLayoutWithTags({
   initialDisplayPosts = [],
   pagination,
   totalPosts,
+  basePath,
+  activeTag,
 }: ListLayoutProps) {
-  const pathname = usePathname()
   const tagCounts = tagData as Record<string, number>
   const tagKeys = Object.keys(tagCounts)
   const sortedTags = tagKeys.sort((a, b) => tagCounts[b] - tagCounts[a])
-  const activeTag = decodeURI(pathname.split('/tags/')[1] ?? '')
+  const allPostsActive = !activeTag
 
   const displayPosts = initialDisplayPosts.length > 0 ? initialDisplayPosts : posts
 
@@ -90,7 +97,7 @@ export default function ListLayoutWithTags({
         <Link
           href="/blog"
           className={`-ml-px block border-l-2 py-1.5 pl-3 text-[13px] leading-5 transition-colors ${
-            pathname.startsWith('/blog')
+            allPostsActive
               ? 'border-primary-500 text-primary-600 dark:text-primary-400 font-medium'
               : 'hover:border-primary-300 border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
           }`}
@@ -163,7 +170,11 @@ export default function ListLayoutWithTags({
           </ul>
 
           {pagination && pagination.totalPages > 1 && (
-            <Pagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} />
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              basePath={basePath}
+            />
           )}
         </div>
       </div>

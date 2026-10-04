@@ -25,6 +25,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page: st
       pagination={pagination}
       title="全部文章"
       totalPosts={posts.length}
+      basePath="/blog"
     />
   )
 }
