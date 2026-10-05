@@ -65,13 +65,13 @@ export default function PostLayout({
   const basePath = path.split('/')[0]
 
   return (
-    <SectionContainer>
+    <SectionContainer wideFromToc>
       <ReadingProgress />
       <ScrollTopAndComment />
       <article className="pt-10 xl:pt-12">
-        <div className="xl:flex xl:justify-center">
+        <div className="min-[1152px]:flex min-[1152px]:justify-center">
           {showToc && <TocSidebar toc={toc} numbering={Boolean(autoNumbering)} />}
-          <div className="mx-auto w-full max-w-[42rem] min-w-0 xl:mx-0">
+          <div className="mx-auto w-full max-w-[42rem] min-w-0 min-[1152px]:mx-0">
             <header>
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12.5px] text-gray-500 dark:text-gray-400">
                 <time dateTime={date} className="tracking-wide">

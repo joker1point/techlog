@@ -42,7 +42,7 @@ export default function TocSidebar({ toc, numbering }: { toc: TocItem[]; numberi
   return (
     <aside
       aria-label="文章目录"
-      className={`mr-12 hidden shrink-0 overflow-clip xl:block ${
+      className={`mr-12 hidden shrink-0 overflow-clip min-[1152px]:block ${
         animate ? 'transition-[width] duration-300 motion-reduce:transition-none' : ''
       } ${collapsed ? 'w-10' : 'w-52'}`}
     >
