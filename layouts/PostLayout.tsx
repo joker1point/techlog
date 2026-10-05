@@ -65,7 +65,7 @@ export default function PostLayout({
   const basePath = path.split('/')[0]
 
   return (
-    <SectionContainer wideFromToc>
+    <SectionContainer>
       <ReadingProgress />
       <ScrollTopAndComment />
       <article className="pt-10 xl:pt-12">
