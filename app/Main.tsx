@@ -45,7 +45,7 @@ export default function Home({ posts }: { posts: EntryPost[] }) {
               <li key={post.path} className="flex flex-wrap items-baseline gap-x-3">
                 <time
                   dateTime={post.date}
-                  className="font-mono text-[12.5px] tabular-nums text-gray-400 dark:text-gray-500"
+                  className="font-mono text-[12.5px] text-gray-400 tabular-nums dark:text-gray-500"
                 >
                   {formatDate(post.date, siteMetadata.locale)}
                 </time>
