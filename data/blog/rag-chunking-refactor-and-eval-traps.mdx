@@ -1,7 +1,7 @@
 ---
 title: '把 143 块拆到 45 块：一次 RAG 分块重构，和它揭出来的评测陷阱'
 date: '2026-09-28'
-tags: ['rag', 'chunking', 'evaluation', 'chromadb', 'llm', 'engineering']
+tags: ['rag', 'chunking', 'evaluation', 'chromadb', 'llm', 'engineering', 'vdb-news']
 draft: false
 summary: '把一句 RecursiveCharacterTextSplitter(1000, 200) 换成「清洗 → 画像 → 分层 → 校验 → 回退」的自适应分块器，全库 1959 → 1120 块、HTML 残留 38.3% → 0%、单篇最多块数 143 → 45。但改起来容易、证明它变好很难：A/B 显示六个检索配置全部正向，同时也让「多路召回 +11.1%」缩水到 +2.2pp——原来那部分增益是在补偿脏文本，不是互补召回。本文连同评测自身的三个陷阱（wall-clock 时间窗、judge 随机失败、n=18 时符号会翻）与一次生产语料重建的前置验证一起记录。'
 ---

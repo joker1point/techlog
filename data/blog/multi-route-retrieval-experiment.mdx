@@ -1,7 +1,7 @@
 ---
 title: '修 5 坏 2，还是修 3 坏 0？——一次 55 题的多路召回实验，与两个能亲手操作的复盘页'
 date: '2026-10-01'
-tags: ['rag', 'retrieval', 'hybrid-search', 'bm25', 'evaluation', 'chromadb', 'engineering']
+tags: ['rag', 'retrieval', 'hybrid-search', 'bm25', 'evaluation', 'chromadb', 'engineering', 'vdb-news']
 draft: false
 summary: '给检索链路补一条字面路（BM25）去修专名盲区：55 题实测，两条路全程都开能多答对 5 题、但也弄坏 2 题；改成「查询点了名、且语义路确实没找到」才补路，则多答对 3 题、零回退。本文记录四配置对比、λ 的两次扫描（含一个被数据否决的方向）、以及一条必须诚实标注的「不算数的修复」，文末附两个无需后端、离线的交互式复盘页。'
 ---

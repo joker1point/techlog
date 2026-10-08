@@ -1,7 +1,7 @@
 ---
 title: '什么才算「同一件事」：热点聚类的三轮试错，与把判同交给模型之后发生的事'
 date: '2026-10-08'
-tags: ['clustering', 'event-clustering', 'llm', 'prompt-engineering', 'evaluation', 'rag', 'engineering']
+tags: ['clustering', 'event-clustering', 'llm', 'prompt-engineering', 'evaluation', 'rag', 'engineering', 'vdb-news']
 draft: false
 summary: '把「同一件事的多方报道」聚成一条时间线，听起来是道相似度题，实际做下来：纯余弦区分不了「同一领域」和「同一件事」（语料两两余弦最大仅 0.706），加实体词会把 Arxiv 每日批次串成 10 条大簇，最后只能退回最保守的口径。v2 把判同交给模型，第一次评测就被教做人——模型错判时置信度同样是 0.95+，校准阈值救不了。而上线之后最反直觉的发现是：判同明明准了，缺的却是「有人跟它撞题」。'
 ---
