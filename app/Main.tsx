@@ -16,6 +16,8 @@ export default function Home({ posts }: { posts: EntryPost[] }) {
   const vdbPosts = [...posts]
     .filter((p) => p.tags?.includes('vdb-news'))
     .sort((a, b) => (a.date < b.date ? 1 : -1))
+  // 会员专区（2026-10-09 新建）：同样按 tag 实时筛选，文章打上 members 标签即自动进区
+  const memberPosts = posts.filter((p) => p.tags?.includes('members'))
 
   return (
     <>
@@ -73,6 +75,47 @@ export default function Home({ posts }: { posts: EntryPost[] }) {
             >
               查看在线站点 ↗
             </a>
+          </div>
+        </section>
+      )}
+
+      {memberPosts.length > 0 && (
+        <section className="border-b border-gray-200 py-9 dark:border-gray-700/80">
+          <div className="font-mono text-[12.5px] tracking-[0.18em] text-gray-400 uppercase dark:text-gray-500">
+            会员专区
+          </div>
+          <h2 className="mt-4 text-xl leading-8 font-bold tracking-tight text-gray-900 dark:text-gray-50">
+            可直接照做的那一层
+          </h2>
+          <p className="mt-3 max-w-[46rem] text-[15px] leading-7 text-gray-600 dark:text-gray-400">
+            公开文章讲思路与取舍，这里放完整参数、验收清单、被否掉的版本和原因——
+            都是我自己项目里正在用的规格。
+          </p>
+          <ul className="mt-5 space-y-2.5">
+            {memberPosts.map((post) => (
+              <li key={post.path} className="flex flex-wrap items-baseline gap-x-3">
+                <time
+                  dateTime={post.date}
+                  className="font-mono text-[12.5px] text-gray-400 tabular-nums dark:text-gray-500"
+                >
+                  {formatDate(post.date, siteMetadata.locale)}
+                </time>
+                <Link
+                  href={`/${post.path}`}
+                  className="hover:text-primary-600 dark:hover:text-primary-400 text-[15px] text-gray-700 transition-colors dark:text-gray-300"
+                >
+                  {post.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[13px]">
+            <Link
+              href="/members"
+              className="hover:text-primary-600 dark:hover:text-primary-400 text-gray-500 transition-colors dark:text-gray-400"
+            >
+              进入会员专区 →
+            </Link>
           </div>
         </section>
       )}
