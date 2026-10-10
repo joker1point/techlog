@@ -191,6 +191,13 @@ export default function PostLayout({
                   在 GitHub 上编辑
                 </Link>
                 <Link
+                  href={`${siteMetadata.siteRepo}/issues`}
+                  className="transition-colors hover:text-gray-900 dark:hover:text-gray-100"
+                  aria-label="提 issue 反馈"
+                >
+                  有疑问？提 issue &rarr;
+                </Link>
+                <Link
                   href={`/${basePath}`}
                   className="transition-colors hover:text-gray-900 dark:hover:text-gray-100"
                   aria-label="返回博客列表"
