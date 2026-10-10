@@ -18,10 +18,12 @@
 | 真实截图 | 项目实际界面 / 终端输出 / 运行结果——首选，最有说服力 | 用 `Figure` 组件；文件在 `public/static/images/<slug>/` |
 | 动图 GIF | 短流程演示（≤10s、≤2MB），如操作序列、动画效果 | 同上（`.gif`） |
 | 数据图表 | 评测 / 实验数据出图（matplotlib / plotly 导出 png） | 同上 |
-| 流程图 / 时序图 | 低成本合格形态，适合架构与流程说明 | mermaid 代码围栏（站点内置渲染） |
+| 流程图 / 时序图 | mermaid 语法只作**源格式**，发布前预渲染为 PNG（读者端零 JS） | `python _deploy/_qa/mermaid_to_png.py <源码.mmd> <输出.png>` → 正文用 `Figure` 引用 |
 | 交互内嵌（增强） | 超出及格线：文章内可直接跑的小实验 | `LabEmbed` 组件，用法见 `semantic-components.md` |
 
 **不算**合格视觉元素：`Callout` / `Stat` / `StatGrid` / `PullQuote`（排版组件）、表格、纯装饰性图片。
+
+**流程图工作流**（2026-10-10 起）：文章内**不再直接嵌 mermaid 代码块**——读者端要先加载几百 KB 的 mermaid 运行时（首访秒级延迟，实测体验差）。改为：写 mermaid 源码 → 跑 `mermaid_to_png.py` 生成高清 PNG（浅色卡片底，亮/暗主题可读）→ 正文用 `Figure` 引用。
 
 ### 图片存放与引用
 
