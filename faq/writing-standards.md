@@ -35,13 +35,13 @@
 ### 自查
 
 ```bash
-python _deploy/_qa/check_blog_figures.py <mdx 路径>
+python scripts/ci_check.py --files <mdx 路径>
 ```
 
-（在 frontend-works 目录下执行；输出汉字数、需图数、实际图数与 PASS / FAIL。）
+（仓库内执行；一次跑机械五项 + 密度两项。输出汉字数、需图数、实际图数与 PASS / FAIL；机械项见 §2。）
 
 ## 2. 沿用既有红线（不因本规范改变）
 
 - `.mdx` **必须 LF 行尾**；正文裸 `<tag>` 会被 MDX 当 JSX、裸 `{}` 当表达式——尖括号内容一律包反引号，否则整站构建失败。
 - 对外内容不含服务器信息 / 本机路径 / 凭据（泄漏扫描零误报为前提）。
-- 上线前跑 `check_blog_post.py`；本地只做视觉 QA，不跑 `next build`。
+- 上线前自查 `python scripts/ci_check.py --files <mdx>`（机械五项 + 密度）；**CI 兜底**：push main 后自动复检变更文章，不通过不部署（`pages.yml` 前置步骤）；本地只做视觉 QA，不跑 `next build`。
