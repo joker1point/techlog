@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>让 AI 写代码背后的十一道防线</title>
+<meta name="description" content="一个工业级多租户业务系统的开发辅助文档体系全景：十一道防线、69 份文档、1067 条标题。已脱敏，只讲机制。">
+<style>
+:root{
+  --ink:#0B0B0D; --ink-2:#0E0E11; --paper:#EFECE4; --paper-dim:#B6B2A9;
+  --muted:#7C7871; --dim:#8F8A82; --faint:#6E6A63; --rule:#242429; --rule-2:#191920; --accent:#D64426;
+  --serif:"Songti SC","STSong","Source Han Serif SC","Noto Serif CJK SC","SimSun",serif;
+  --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Menlo","Consolas","Courier New",monospace;
+  --gut:clamp(20px,4.5vw,72px); --rail:74px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{
+  background:var(--ink); color:var(--paper); font-family:var(--sans);
+  font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility; overflow-x:hidden;
+}
+body::before{
+  /* 纸面颗粒：唯一的材质层，opacity 极低 */
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.035;
+  background-image:radial-gradient(var(--paper) .5px, transparent .6px);
+  background-size:3px 3px;
+}
+.wrap{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:0 var(--gut)}
+
+/* ---------- 顶部进度 + 左侧编号栏 ---------- */
+#prog{position:fixed;top:0;left:0;height:1px;width:0;background:var(--accent);z-index:60}
+#rail{position:fixed;left:0;top:0;bottom:0;width:var(--rail);z-index:50;
+  display:flex;flex-direction:column;justify-content:center;gap:2px;
+  padding-left:14px;border-right:1px solid var(--rule-2)}
+#rail a{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--faint);
+  text-decoration:none;padding:3px 0;transition:color .25s}
+#rail a:hover{color:var(--paper-dim)}
+#rail a.on{color:var(--accent)}
+#rail a.on::after{content:"";display:inline-block;width:9px;height:1px;background:var(--accent);
+  vertical-align:middle;margin-left:5px}
+@media (max-width:1100px){#rail{display:none}}
+
+/* ---------- 通用排印 ---------- */
+.lab{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4.4vw,46px);line-height:1.18;
+  letter-spacing:-.01em;margin-bottom:.55em}
+h3{font-family:var(--serif);font-weight:400;font-size:clamp(19px,2.3vw,25px);line-height:1.35}
+.lead{color:var(--paper-dim);max-width:58ch;font-size:16.5px}
+.rule{height:1px;background:var(--rule);margin:0}
+section{padding:clamp(64px,11vh,132px) 0;position:relative}
+.sechead{display:flex;align-items:baseline;gap:18px;margin-bottom:34px}
+.sechead .num{color:var(--accent);font-size:11px;letter-spacing:.16em;white-space:nowrap}
+
+/* ---------- HERO ---------- */
+#hero{padding-top:clamp(72px,16vh,180px);padding-bottom:clamp(48px,9vh,110px)}
+.meta{display:flex;flex-wrap:wrap;gap:0 26px;margin-bottom:clamp(30px,6vh,64px)}
+.meta div{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--dim)}
+.meta b{color:var(--paper-dim);font-weight:400}
+#hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(38px,8.2vw,104px);
+  line-height:1.06;letter-spacing:-.015em;margin-left:-.06em}
+#hero h1>span{display:block}
+#hero h1 .l2{color:var(--paper)}
+#hero h1 .hi{color:var(--accent)}
+#hero .sub{margin-top:clamp(26px,5vh,52px);display:flex;gap:clamp(16px,4vw,52px);flex-wrap:wrap;align-items:flex-end;justify-content:space-between}
+#hero .sub p{max-width:46ch;color:var(--paper-dim);font-size:17px}
+#hero .sub p em{font-style:normal;color:var(--paper);border-bottom:1px solid var(--accent)}
+.tiny{font-family:var(--mono);font-size:10.5px;line-height:1.9;letter-spacing:.08em;color:var(--dim);max-width:34ch}
+
+/* ---------- 01 对照 ---------- */
+.duel{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 clamp(24px,4vw,58px);margin-top:12px}
+.duel .col{padding:6px 0 4px}
+.duel .vh{border-left:1px solid var(--rule)}
+.duel h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
+.duel h4 b{color:var(--paper);font-weight:400}
+.duel ol{list-style:none;counter-reset:s}
+.duel li{counter-increment:s;display:grid;grid-template-columns:26px 1fr;gap:12px;
+  padding:11px 0;border-bottom:1px solid var(--rule-2);font-size:15px;color:var(--paper-dim)}
+.duel li::before{content:counter(s,decimal-leading-zero);font-family:var(--mono);font-size:10.5px;
+  color:var(--faint);padding-top:4px}
+.duel .right li{color:var(--paper)}
+.duel .right li::before{color:var(--accent)}
+.duel .punch,.duel .right li.punch{grid-column:1/-1;font-family:var(--serif);font-size:16px;color:var(--accent);padding-top:2px}
+.after{margin-top:clamp(30px,5vh,54px);font-family:var(--serif);font-size:clamp(19px,2.9vw,30px);
+  line-height:1.45;max-width:34ch}
+.after i{font-style:normal;color:var(--accent)}
+@media (max-width:760px){
+  .duel{grid-template-columns:1fr}
+  .duel .vh{display:none}
+  .duel .col.right{margin-top:28px}
+}
+
+/* ---------- 02 规格表 ---------- */
+#specs{background:var(--ink-2);border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule-2);
+  border:1px solid var(--rule-2);margin-top:8px}
+.cell{background:var(--ink-2);padding:clamp(20px,3vw,34px) clamp(16px,2.2vw,26px);
+  opacity:0;transform:translateY(14px);transition:opacity .7s,transform .7s}
+.cell.in{opacity:1;transform:none}
+.cell .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:clamp(30px,4.6vw,54px);
+  line-height:1;letter-spacing:-.03em;color:var(--paper);transition:text-shadow .4s,color .4s}
+.cell.pulse .v{color:#fff;text-shadow:0 0 18px rgba(214,68,38,.55)}
+.cell .k{margin-top:14px;font-size:14.5px;color:var(--paper)}
+.cell .n{margin-top:6px;font-family:var(--mono);font-size:10.5px;line-height:1.7;letter-spacing:.04em;color:var(--dim)}
+@media (max-width:820px){.grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ---------- 03 防线 ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+  margin-top:clamp(20px,3.4vh,34px);padding-bottom:20px;border-bottom:1px solid var(--rule);margin-bottom:6px}
+#q{flex:1 1 300px;min-width:0;background:transparent;border:1px solid var(--rule);
+  color:var(--paper);font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+  padding:12px 14px}
+#q:focus{outline:none;border-color:var(--accent)}
+#q::placeholder{color:var(--faint)}
+@media (max-width:760px){#q{font-size:16px;min-height:44px}.btn{min-height:44px}}
+.tally{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--muted);white-space:nowrap}
+.tally b{color:var(--accent);font-weight:400}
+.btn{background:transparent;border:1px solid var(--rule);color:var(--paper-dim);cursor:pointer;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;padding:12px 15px;transition:.22s}
+.btn:hover{border-color:var(--paper-dim);color:var(--paper)}
+
+.d{border-bottom:1px solid var(--rule);opacity:0;transform:translateY(10px);
+  transition:opacity .6s,transform .6s}
+.d.in{opacity:1;transform:none}
+.d.hide{display:none}
+.d>button{width:100%;background:none;border:0;color:inherit;cursor:pointer;text-align:left;
+  display:grid;grid-template-columns:56px 1fr auto;gap:clamp(10px,2.5vw,26px);align-items:baseline;
+  padding:24px 0;font:inherit;transition:background .25s}
+.d>button:hover{background:rgba(239,236,228,.022)}
+.d>button .id{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--faint);transition:color .25s}
+.d.open>button .id,.d>button:hover .id{color:var(--accent)}
+.d>button .nm{font-family:var(--serif);font-size:clamp(19px,2.6vw,27px);line-height:1.3}
+.d>button .ct{font-family:var(--mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.d>button .ct::after{content:"  ＋";color:var(--dim)}
+.d.open>button .ct::after{content:"  －";color:var(--accent)}
+.d .why{grid-column:2;color:var(--muted);font-size:14.5px;max-width:62ch;margin-top:6px}
+.d.open .why{color:var(--paper-dim)}
+.panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.4,0,.2,1)}
+.d.open .panel{grid-template-rows:1fr}
+.panel>div{overflow:hidden}
+.refs{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:0 0 20px 56px}
+@media (max-width:640px){.refs{padding-left:0}}
+.refs .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--dim)}
+.ref{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--paper-dim);
+  background:none;border:1px solid var(--rule);padding:0 10px;min-height:34px;cursor:pointer;
+  transition:border-color .22s,color .22s;line-height:1.4}
+.ref:hover{border-color:var(--accent);color:var(--accent)}
+.ref.static{border-style:dashed;color:var(--faint);cursor:default;min-height:auto;padding:2px 8px}
+@media (max-width:640px){.ref{min-height:44px}}
+.grp{padding:0 0 22px 56px}
+.grp>h5{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--paper);padding-bottom:11px;margin-bottom:12px;border-bottom:1px solid var(--rule-2);
+  display:flex;justify-content:space-between}
+.grp>h5 span{color:var(--faint)}
+ul.tl{list-style:none;display:grid;grid-template-columns:repeat(2,1fr);gap:0 clamp(18px,3vw,44px)}
+@media (max-width:760px){ul.tl{grid-template-columns:1fr}.grp{padding-left:0}}
+ul.tl li{font-size:14.5px;color:var(--paper-dim);padding:7px 0;border-bottom:1px solid var(--rule-2);
+  display:grid;grid-template-columns:11px 1fr;gap:9px;opacity:0;transform:translateY(7px);
+  transition:opacity .4s,transform .4s}
+.d.open ul.tl li{opacity:1;transform:none}
+ul.tl li::before{content:"";height:1px;background:#33302B;margin-top:14px}
+ul.tl li mark{background:none;color:var(--accent);text-decoration:none;font-weight:600}
+ul.tl li.hit{color:var(--paper)}
+ul.tl .subs{grid-column:2;margin:3px 0 5px}
+ul.tl .subs span{display:block;font-size:13px;color:var(--dim);padding:3px 0 3px 13px;
+  border-left:1px solid var(--rule-2)}
+ul.tl .bod{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--accent);
+  vertical-align:2px;margin-right:9px;border:1px solid #3A2A22;padding:2px 5px}
+.note{margin:2px 0 0 56px;padding:16px 20px;border:1px dashed #2C2A26;color:var(--muted);font-size:14px;max-width:70ch}
+.note b{color:var(--paper-dim);font-weight:400}
+@media (max-width:760px){.note{margin-left:0}}
+/* ---------- 03 · 五拍因果链 ---------- */
+.beats{padding:0 0 6px 56px}
+@media (max-width:760px){.beats{padding-left:0}}
+.beat{padding:15px 0 16px;border-bottom:1px solid var(--rule-2);max-width:78ch;
+  opacity:0;transform:translateY(7px);transition:opacity .45s,transform .45s}
+.d.open .beat{opacity:1;transform:none}
+.beat>b{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;color:var(--accent);margin-bottom:8px}
+.beat p{font-size:15px;color:var(--paper-dim);line-height:1.85}
+.beat.gain{border-bottom:0;margin-top:8px;padding:14px 0 2px 16px;border-left:2px solid var(--accent)}
+.beat.gain>b{color:var(--paper)}
+.flow-steps{list-style:none;counter-reset:s;display:grid;gap:0;margin:0;padding:0}
+.flow-steps li{position:relative;padding:9px 0 9px 44px;font-size:14.5px;color:var(--paper-dim);
+  line-height:1.7;border-bottom:1px dashed var(--rule-2)}
+.flow-steps li:last-child{border-bottom:0}
+.flow-steps li::before{counter-increment:s;content:counter(s,decimal-leading-zero);
+  position:absolute;left:0;top:12px;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+.flow-steps li mark{background:none;color:var(--accent);font-weight:600}
+.beat p mark{background:none;color:var(--accent);font-weight:600}
+.bt.hit{color:var(--paper)}
+.d.flash>button{animation:fl 1.5s ease-out}
+@keyframes fl{from{background:rgba(214,68,38,.16)}to{background:transparent}}
+@media (prefers-reduced-motion:reduce){.d.flash>button{animation:none}}
+
+/* ---------- 附图 · 三张机制图 ---------- */
+#flow{background:var(--ink-2);border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2)}
+.fig{margin-top:clamp(36px,6vh,72px)}
+.fig:first-of-type{margin-top:clamp(24px,4vh,44px)}
+.fighead{display:grid;grid-template-columns:56px 1fr;gap:clamp(10px,2.5vw,26px);align-items:baseline;margin-bottom:26px}
+.fighead .fno{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--faint)}
+.fighead h4{font-family:var(--serif);font-weight:400;font-size:clamp(18px,2.4vw,25px);
+  line-height:1.42;max-width:13em}
+.fighead p{grid-column:2;color:var(--muted);font-size:14.5px;max-width:68ch;margin-top:9px;line-height:1.8}
+.ind{margin-left:56px}
+@media (max-width:640px){.fighead{grid-template-columns:1fr}.fighead .fno{margin-bottom:6px}.fighead p{grid-column:1}.ind{margin-left:0}}
+
+/* 图一 · 事件链 */
+.chain{position:relative;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));padding-top:30px}
+.chain .track,.chain .fill{position:absolute;top:0;left:0;height:1px}
+.chain .track{right:0;background:#33302B}
+.chain .fill{width:0;background:var(--accent);transition:width 2.4s linear}
+.fig.run .chain .fill{width:100%}
+.chain .nd{position:relative;padding-right:10px}
+.chain .nd .pt{position:absolute;top:-4px;left:0;width:7px;height:7px;border-radius:50%;background:#33302B;
+  transition:background .35s,box-shadow .35s;transition-delay:calc(var(--i)*.29s)}
+.fig.run .chain .nd .pt{background:var(--accent);box-shadow:0 0 0 3px rgba(214,68,38,.13)}
+.chain .nd.dead .pt{background:var(--ink-2);border:1px solid var(--accent);box-shadow:none}
+.chain .nd b{display:block;font-size:14.5px;font-weight:400;color:var(--dim);transition:color .35s;
+  transition-delay:calc(var(--i)*.29s)}
+.fig.run .chain .nd b{color:var(--paper)}
+.chain .nd i{display:block;font-family:var(--mono);font-style:normal;font-size:9.5px;letter-spacing:.06em;
+  color:var(--faint);margin-top:5px;line-height:1.6}
+.chain .nd.dead i{color:var(--accent)}
+.cn{display:grid;grid-template-columns:clamp(72px,10vw,104px) 1fr;gap:clamp(10px,2.5vw,22px);
+  margin-top:26px;border-top:1px solid var(--rule-2);padding-top:16px}
+.cn .mk{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--accent);padding-top:3px}
+.cn p{font-size:14.5px;color:var(--paper-dim);max-width:74ch;line-height:1.8}
+.cn p em{font-style:normal;color:var(--accent)}
+.replay{margin-top:20px}
+@media (max-width:760px){
+  .chain{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 0;padding-top:14px}
+  .chain .track,.chain .fill{display:none}
+  .chain .nd .pt{top:6px}
+  .chain .nd b,.chain .nd i{margin-left:16px}
+  .cn{grid-template-columns:1fr}
+}
+
+/* 图二 · 双防线 */
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 258px;gap:clamp(18px,3vw,40px);align-items:start}
+.lanes{display:grid;gap:1px;background:var(--rule-2);border:1px solid var(--rule-2)}
+.lane{background:var(--ink);padding:14px 16px;display:grid;grid-template-columns:78px 1fr;gap:14px;align-items:center}
+.lab.leak .lane{background:rgba(214,68,38,.045)}
+.lane .ltag{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim)}
+.lane .rows{display:flex;flex-wrap:wrap;gap:6px}
+.lane .r{font-family:var(--mono);font-size:10.5px;color:var(--paper-dim);border:1px solid var(--rule);padding:4px 8px}
+.lane .r.x{display:none;color:var(--accent);border-color:#4A241A;background:rgba(214,68,38,.08)}
+.lab.leak .lane .r.x{display:block;animation:slidein .5s ease-out}
+.lab.leak .lane .r.x.d2{animation-delay:.18s}
+@keyframes slidein{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.switches{display:grid;gap:8px}
+.sw{background:transparent;border:1px solid var(--rule);color:var(--paper-dim);cursor:pointer;text-align:left;
+  font:inherit;font-size:13.5px;line-height:1.45;padding:12px 13px;display:flex;justify-content:space-between;
+  gap:12px;align-items:center;transition:border-color .22s,color .22s}
+.sw:hover{border-color:var(--paper-dim)}
+.sw::after{content:"关";font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--faint);flex:0 0 auto}
+.sw[aria-pressed="true"]{border-color:#3A2A22;color:var(--paper)}
+.sw[aria-pressed="true"]::after{content:"开";color:var(--accent)}
+.verdict{margin-top:22px;border-left:2px solid var(--accent);padding-left:15px;max-width:78ch;
+  font-size:14.5px;color:var(--paper-dim);line-height:1.82}
+.verdict b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--accent);margin-bottom:7px}
+.verdict .quiet{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--dim);margin-top:9px}
+.verdict .quiet em{font-style:normal;color:var(--accent)}
+@media (max-width:860px){.lab{grid-template-columns:1fr}.lane{grid-template-columns:1fr;gap:10px}}
+
+/* 图三 · 边界地图对账 */
+.terms{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.term{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--paper-dim);
+  border:1px solid var(--rule);padding:7px 10px;opacity:0;transform:translateY(6px);
+  transition:opacity .45s,transform .45s;transition-delay:calc(var(--i)*90ms)}
+.fig.run .term{opacity:1;transform:none}
+.term.exempt{border-style:dashed;border-color:#4A241A;color:var(--accent)}
+.terms .term.exempt{flex:1 1 100%;line-height:1.65}
+.terms .rsn{display:block;margin-top:6px;font-style:normal;font-size:10px;letter-spacing:0;
+  line-height:1.7;color:var(--faint)}
+.foggrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;
+  background:var(--rule-2);border:1px solid var(--rule-2);max-width:920px}
+.foggrid .nt{background:#141419;padding:11px 12px;display:grid;gap:6px;align-content:start;
+  opacity:.24;transition:opacity .5s,background .5s;transition-delay:calc(var(--i)*62ms)}
+.fig.run .foggrid .nt{opacity:1;background:var(--ink)}
+.nt{position:relative}
+.nt::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,transparent);
+  transition:background .45s;transition-delay:calc(var(--i)*62ms)}
+.nt .nid{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--accent)}
+.nt .nlbl{font-size:12.5px;color:var(--paper-dim);line-height:1.5}
+.nt .nref{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--faint)}
+.unknownterms{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.unknownterms .term{color:var(--dim);border-color:var(--rule-2)}
+.unknownterms .term.nb{border-style:dashed;border-color:#6E6A63}
+.meters{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:22px}
+.meters span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--dim)}
+.meters b{color:var(--paper);font-weight:400;font-variant-numeric:tabular-nums}
+.meters span.res b{color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:16px}
+.legend i{display:inline-block;width:11px;height:11px;border:1px solid var(--rule);background:var(--ink);vertical-align:-1px;margin-right:7px}
+.legend span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--dim)}
+.legend .l2 i{background:transparent;border-color:#6E6A63}
+.legend .l3 i{background:transparent;border-color:var(--accent);border-style:dashed}
+/* 图三 · 两条投影轴 */
+.axes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.ax{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--faint);background:none;
+  border:1px solid var(--rule);padding:9px 14px;min-height:34px;cursor:pointer;text-align:left;
+  transition:color .3s,border-color .3s}
+.ax:hover{color:var(--paper-dim);border-color:var(--paper-dim)}
+.ax[aria-pressed="true"]{color:var(--paper);border-color:var(--accent)}
+.ax u{text-decoration:none;color:var(--accent);margin-right:8px}
+.fig[data-ax="up"] .only-down,.fig[data-ax="down"] .only-up{display:none}
+.readout{margin-top:20px;max-width:920px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.04em;line-height:2.05;color:var(--dim)}
+.readout b{color:var(--paper);font-weight:400}
+.readout .rd{color:var(--accent)}
+.arsenal{display:grid;gap:1px;background:var(--rule-2);border:1px solid var(--rule-2);
+  margin-top:20px;max-width:920px}
+.pc{background:var(--ink);padding:13px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:3px 16px;align-items:baseline}
+.pc .ck{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--c)}
+.pc .cn2{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--faint);white-space:nowrap}
+.pc .pt2{grid-column:1;font-size:14px;color:var(--paper-dim);line-height:1.65}
+.pc .st{grid-column:2;justify-self:end;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
+  padding:3px 8px;border:1px solid var(--rule);white-space:nowrap}
+.pc .st.ok{color:var(--paper);border-color:#2E4438}
+.pc .st.cand{color:var(--dim);border-style:dashed}
+.pc .st.no{color:var(--accent);border-color:#4A241A}
+
+/* 图三 · 生长过程（菌丝：两端同时伸出，接不上的不许消失） */
+.grow{position:relative;max-width:920px;margin-bottom:26px}
+.grow svg{display:block;width:100%;height:auto}
+.grow .st-r,.grow .st-b{fill:none;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;
+  transition:stroke-dashoffset 1.15s cubic-bezier(.36,.04,.26,1);
+  transition-delay:calc(var(--i)*46ms)}
+.grow .st-r{stroke:var(--c);stroke-width:1.5;opacity:.72}
+.grow .st-b{stroke:var(--rule-2);stroke-width:1.1;opacity:.4}
+.grow .st-u{fill:none;stroke:var(--accent);stroke-width:1.2;stroke-linecap:round;opacity:.55;
+  stroke-dasharray:1;stroke-dashoffset:1;
+  transition:stroke-dashoffset 1.15s cubic-bezier(.36,.04,.26,1);
+  transition-delay:calc(var(--i)*46ms)}
+.fig.run .grow .st-r,.fig.run .grow .st-b,.fig.run .grow .st-u{stroke-dashoffset:0}
+.grow .nd{fill:var(--ink-2);stroke:var(--c);stroke-width:1.7;opacity:0;
+  transition:opacity .55s;transition-delay:calc(var(--i)*46ms + 1.15s)}
+.fig.run .grow .nd{opacity:1}
+.grow .tip{fill:var(--accent);filter:url(#soft);opacity:0;
+  transition:opacity .7s;transition-delay:calc(var(--i)*46ms + 1.15s)}
+.fig.run .grow .tip{opacity:.42}
+.grow .exempt-ring{fill:none;stroke:var(--accent);stroke-width:1.2;stroke-dasharray:3 4;opacity:0;
+  transition:opacity .7s;transition-delay:2.55s}
+.fig.run .grow .exempt-ring{opacity:.85}
+.grow text{font-family:var(--mono);font-size:12px;letter-spacing:.06em;fill:var(--faint)}
+.grow .lb{opacity:0;transition:opacity .6s;transition-delay:calc(var(--i)*46ms + 1.3s)}
+.fig.run .grow .lb{opacity:1}
+.grow .axl{fill:var(--dim)}
+.grow .gcap{margin-top:14px;font-size:14px;line-height:1.85;color:var(--muted);max-width:88ch}
+.grow .gcap em{font-style:normal;color:var(--accent)}
+/* 丝上的字是按 viewBox 缩放的：列宽 350 时 12px 只剩 4.2px，窄屏必须反向放大字号 */
+@media (max-width:900px){.grow text{font-size:22px}.grow .nolm{display:none}}
+@media (max-width:640px){.grow text{font-size:34px}
+  .grow .exempt-ring{transform:scale(2);transform-box:fill-box;transform-origin:center}}
+@media (max-width:900px){.foggrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:560px){.foggrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- 04 解剖台 ---------- */
+.doc{margin-top:clamp(30px,5vh,56px)}
+.doc .dh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 18px;
+  padding-bottom:13px;border-bottom:1px solid var(--accent)}
+.doc .dh .tag{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--accent)}
+.doc .dmeta{margin-left:auto;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+  color:var(--dim);text-align:right;line-height:1.85}
+.doc .role{margin-top:15px;color:var(--paper-dim);max-width:66ch;font-size:15.5px;line-height:1.78}
+.doc .role i{font-style:normal;color:var(--paper);border-bottom:1px solid var(--rule)}
+.doc .chapters{margin-top:6px}
+@media (max-width:640px){.doc .dmeta{margin-left:0;text-align:left}}
+.takeway{margin-top:clamp(30px,5vh,52px);display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--rule-2);border:1px solid var(--rule-2)}
+.takeway>div{background:var(--ink);padding:clamp(20px,2.6vw,30px)}
+.takeway .no{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--accent)}
+.takeway h6{font-family:var(--serif);font-weight:400;font-size:clamp(17px,2vw,21px);
+  line-height:1.4;margin:11px 0 8px}
+.takeway p{font-size:13.5px;color:var(--muted);line-height:1.78}
+@media (max-width:820px){.takeway{grid-template-columns:1fr}}
+
+/* ---------- 05 方法论 ---------- */
+#close{background:var(--ink-2);border-top:1px solid var(--rule-2)}
+.laws{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule-2);border:1px solid var(--rule-2)}
+.law{background:var(--ink-2);padding:clamp(24px,3.2vw,40px)}
+.law .no{font-family:var(--serif);font-size:13px;color:var(--accent);letter-spacing:.1em}
+.law p{font-family:var(--serif);font-size:clamp(18px,2.2vw,24px);line-height:1.5;margin:16px 0 12px}
+.law small{display:block;font-size:13.5px;color:var(--muted);line-height:1.75}
+@media (max-width:820px){.laws{grid-template-columns:1fr}}
+.final{margin-top:clamp(38px,6vh,64px)}
+.final p{font-family:var(--serif);font-size:clamp(21px,3.4vw,38px);
+  line-height:1.4;max-width:30ch;letter-spacing:-.005em}
+.final .wide{max-width:52ch}
+.final p+p{margin-top:clamp(20px,3vh,34px)}
+.final .punch{margin-top:clamp(30px,5vh,52px);padding-top:clamp(22px,3.4vh,34px);
+  border-top:1px solid var(--rule);font-size:clamp(18px,2.6vw,29px);color:var(--paper-dim);max-width:24ch}
+.final i{font-style:normal;color:var(--accent)}
+footer{padding:44px 0 64px;border-top:1px solid var(--rule-2)}
+footer .grid2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,60px)}
+@media (max-width:700px){footer .grid2{grid-template-columns:1fr}}
+footer p{font-family:var(--mono);font-size:11px;line-height:1.95;letter-spacing:.04em;color:var(--dim)}
+footer p b{color:var(--paper-dim);font-weight:400}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<nav id="rail" aria-label="章节导航"></nav>
+
+<div class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <header id="hero">
+    <div class="meta">
+      <div>档案 · <b>开发辅助文档体系全景</b></div>
+      <div>项目 · <b>某工业级多租户业务系统（已匿名）</b></div>
+      <div>快照 · <b>2026-10-11</b></div>
+      <div>密级 · <b>已脱敏：机制保留，标识符清除</b></div>
+    </div>
+    <h1>
+      <span>让 AI 写代码，</span>
+      <span class="l2">难的从来不是</span>
+      <span class="l2">让它<span class="hi">写</span>。</span>
+    </h1>
+    <div class="sub">
+      <p>是让它别写坏、别写漏、别把上个月刚对齐的账<em>再写歪一次</em>。</p>
+      <div class="tiny">这份页面做了三件事：<br>提取一个真实项目里所有「给 AI 看的文档」的标题，<br>按它们各自拦住的事故分成十一层，再把撑起这些细节的两份底稿逐章解剖。<br>69 份文档 · 1067 条标题 · 560 份验证留痕。</div>
+    </div>
+  </header>
+
+  <!-- ============ 01 对照 ============ -->
+  <section id="s1">
+    <div class="sechead"><span class="num">01</span><h2>同一个需求，两条路</h2></div>
+    <p class="lead">第一条路是大多数人实际在走的流程，第二条路是这套东西长出来的原因。两者的差别不在提示词写得多巧，在于第 0 步有没有那十一层。</p>
+    <div class="duel">
+      <div class="col left">
+        <h4><b>常见做法</b> · 一次会话</h4>
+        <ol>
+          <li>打开对话框，用自然语言描述需求。</li>
+          <li>AI 读一遍仓库，输出看起来合理的代码。</li>
+          <li>本地能跑，演示通过，收工。</li>
+          <li>两周后：同一笔账在两个入口各算了一遍，对不上。</li>
+          <li>三个月后：接手的人不知道哪个开关是装饰，改了等于没改。</li>
+          <li class="punch">每一处都「看起来是对的」，没有任何一处有能力把自己变红。</li>
+        </ol>
+      </div>
+      <div class="vh"></div>
+      <div class="col right">
+        <h4><b>这套做法</b> · 开工之前先存在的东西</h4>
+        <ol>
+          <li>会话自动加载一份路由索引：需求进来四步定位到该改哪。</li>
+          <li>两千行手册按锚点切片，只加载当前任务需要的那一段。</li>
+          <li>需求原文逐字抄进边界地图，禁改写；漏掉的和多做的，一律由脚本对账。</li>
+          <li>提交前两道脚本门禁，退出码不是 0 就不许提交。</li>
+          <li>跨会话交接有固定字段：陷阱、依赖、怎么算通过。</li>
+          <li>做完八项收尾检查，审计存档写明「还剩什么未知」。</li>
+          <li class="punch">十一层不是为了限制 AI，是为了敢让它碰生产系统。</li>
+        </ol>
+      </div>
+    </div>
+    <p class="after">所谓「AI 写代码写不好」，多数时候不是模型不行，是<i>没人告诉它这个系统的边界在哪、红线在哪、怎么算做完</i>。</p>
+  </section>
+
+  <!-- ============ 02 规格表 ============ -->
+  <section id="specs">
+    <div class="sechead"><span class="num">02</span><h2>规模，以及每个数字的口径</h2></div>
+    <div class="grid" id="stat"></div>
+  </section>
+
+  <!-- ============ 03 十一道防线 ============ -->
+  <section id="s3">
+    <div class="sechead"><span class="num">03</span><h2>十一道防线</h2></div>
+    <p class="lead">全量扫描 1067 条标题，这里不是把它们平铺出来：标题清单在 04 区逐条列全，这一区按「拦什么事故」归成十一道防线，每道讲完同一条因果链——什么时候触发、它能干什么、它解决什么问题、怎么实现、最后解决了什么。卡片顶上那排出处是指针，点一下跳到 04 区对应章节并展开；反过来 04 区每一章也写清它归入哪道防线。措辞全部脱敏：所有具体名称、表名、接口、地址一律换成功能性描述，没有替任何文件编造过一条标题。</p>
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="搜这一页：禁手改 / 编号 / 退出码 / 只读 / 未知 …" autocomplete="off" aria-label="搜索机制描述与标题清单">
+      <span class="tally" id="tally">每道防线五拍 · 标题清单在 04 区</span>
+      <button class="btn" id="toggle">全部展开</button>
+    </div>
+    <div id="defs"></div>
+    <div class="note"><b>诚实位。</b>术语表与架构决策记录属于开发流程资产，本项目目前按需落在单份规格与交接里（含逐条编号的备选方案取舍），<b>尚未沉淀为项目级常驻文件</b>。缺口保留在页面上，不折算成已完成。</div>
+  </section>
+
+  <!-- ============ 附图 · 三张机制图 ============ -->
+  <section id="flow">
+    <div class="sechead"><span class="num">附</span><h2>三张图：清单背后在跑什么</h2></div>
+    <p class="lead">03 区是因果链，看着抽象。这一区把其中三条机制画出来：一张单据要在多少环节之间跳转、每一跳谁在监听；隔离为什么是两道、而且顺序不能反；动手之前怎么把「不知道」变成能对账的格子。图里不新增任何事实——每一句都能在 04 区的标题清单里找到对应条目，节点与数字取同一次真实交付的快照。</p>
+
+    <!-- 图一 -->
+    <div class="fig">
+      <div class="fighead"><span class="fno">图一</span>
+        <h4>一条单据要走七跳，<br>每一跳都有人在听</h4>
+        <p>事件不是一句通知，是一份有名字的契约：谁发布、谁订阅、按什么顺序。左边那条链是一张单据的真实生命周期，每个节点下面写着接住它的那一方。</p>
+      </div>
+      <div class="ind">
+        <div class="chain" role="img" aria-label="单据生命周期七跳事件链，末跳为无人监听的假设分支">
+          <span class="track"></span><span class="fill"></span>
+          <div class="nd" style="--i:0"><span class="pt"></span><b>起草并确认</b><i>监听 · 排程</i></div>
+          <div class="nd" style="--i:1"><span class="pt"></span><b>排程已建</b><i>监听 · 状态</i></div>
+          <div class="nd" style="--i:2"><span class="pt"></span><b>生产完成</b><i>监听 · 状态</i></div>
+          <div class="nd" style="--i:3"><span class="pt"></span><b>发货单建好</b><i>监听 · 库存</i></div>
+          <div class="nd" style="--i:4"><span class="pt"></span><b>已装车</b><i>监听 · 库存</i></div>
+          <div class="nd" style="--i:5"><span class="pt"></span><b>已发车</b><i>监听 · 状态</i></div>
+          <div class="nd" style="--i:6"><span class="pt"></span><b>已交付</b><i>监听 · 审批</i></div>
+          <div class="nd dead" style="--i:7"><span class="pt"></span><b>假设再加一跳</b><i>监听 0 · 未登记</i></div>
+        </div>
+        <div class="cn"><span class="mk">空心点</span><p>这一跳是假设，不是现状。但它对应的失效模式是真实写在清单里的：<em>发了一条没人监听的事件，不会崩、不会报错、不会重试</em>，只在日志留一行警告。所以「谁订阅谁」这张映射表不是文档装饰，它让漏挂订阅在评审时就暴露，而不是在上线后。</p></div>
+        <div class="cn"><span class="mk">另一种死法</span><p>订阅回调里一次没被接住的异常，会让<em>那条订阅任务永久死亡</em>。之后每一次投递都发现「没有接收者」，于是静默跳过：进程健康、其余接口正常，只有那一个每次都等到超时才返回。这一条被单独提成一行红线，配了排查顺序——先翻日志找异常回溯，别先怀疑连接池和网络。</p></div>
+        <button class="btn replay">重播 · 事件流</button>
+      </div>
+    </div>
+
+    <!-- 图二 -->
+    <div class="fig">
+      <div class="fighead"><span class="fno">图二</span>
+        <h4>隔离是两道防线，<br>而且顺序不可颠倒</h4>
+        <p>这一条是被一次审计逼出来的。三个开关你随便关，但请按这个顺序读：只关第二道，数据不会串、数据库也不吭声；把第一道一起关掉，才会看见别人的行。两道单独失效都看不见，合起来才致命——而项目当时恰好同时具备这两条。</p>
+      </div>
+      <div class="ind">
+        <div class="lab" id="lab" data-state="ok">
+          <div class="lanes">
+            <div class="lane"><span class="ltag">甲租户取数</span><div class="rows">
+              <span class="r">自己的行</span><span class="r">自己的行</span><span class="r x">别人的行</span><span class="r x d2">整库可见</span>
+            </div></div>
+            <div class="lane"><span class="ltag">乙租户取数</span><div class="rows">
+              <span class="r">自己的行</span><span class="r">自己的行</span><span class="r x">别人的行</span><span class="r x d2">整库可见</span>
+            </div></div>
+          </div>
+          <div class="switches">
+            <button class="sw" data-k="pred" aria-pressed="true">第一道 · 每条查询显式带租户条件</button>
+            <button class="sw" data-k="enable" aria-pressed="true">第二道 · 隔离策略的安全开关</button>
+            <button class="sw" data-k="force" aria-pressed="true">第二道 · 策略的强制约束</button>
+          </div>
+          <p class="verdict" id="verdict"><b>状态</b>—</p>
+        </div>
+        <div class="cn" style="margin-left:0"><span class="mk">为什么这个顺序</span><p>第一道是唯一依据，第二道只是兜底，而且明文写着「不得作为省略第一道的理由」。规则里还有一条更硬的：<em>禁止在注释里写「靠隔离层兜底」</em>。这句话在本项目不是风格问题——它被当成了授权，后面长出一百三十余处不显式带条件的查询，而当时估计的数字是七处。</p></div>
+      </div>
+    </div>
+
+    <!-- 图三 -->
+    <div class="fig" data-ax="up">
+      <div class="fighead"><span class="fno">图三</span>
+        <h4>动手之前：<br>升维对账，降维投影</h4>
+        <p>同一批节点，用两把尺子各量一遍。第一把把维度拉高：终点是需求原文逐字抄，禁改写；从终点倒推「要满足它，必须存在什么」，从起点正推「手上已经有什么能直接用」，中间交给脚本做双向差集——需求没有节点承接是缺口，节点没有需求指向是镀金，倒推卡住的那一格逼出一条未知。第二把把维度压下来：双向差集是「需求 ↔ 节点」的二部图，它结构性地看不见「节点 ↔ 节点」的同构重复；于是把同一批节点换一个轴再摆一次，按（层 × 模块角色）投影，够两个以上落进同一格、且入口签名相同，才提名一件通用件。节点一个不删、顺序不变——不是合并，是投影。下面是一次真实交付的快照，编号保留原样，名称已全部换成功能性描述。</p>
+      </div>
+      <div class="ind">
+        <div class="axes">
+          <button class="ax" data-ax="up" aria-pressed="true"><u>轴一</u>需求承接 · 升维对账</button>
+          <button class="ax" data-ax="down" aria-pressed="false"><u>轴二</u>层 × 角色 · 降维投影</button>
+        </div>
+        <div class="grow only-up">
+          <svg id="hyphae" viewBox="0 0 1000 520" role="img"
+               aria-label="升维对账的生长过程：丝从左下角的起点和右侧的终点同时伸出，两头都接上的凝固成节点，接不上的停在原地钉成未知">
+            <defs>
+              <filter id="soft" x="-70%" y="-70%" width="240%" height="240%">
+                <feGaussianBlur stdDeviation="2.6"/>
+              </filter>
+            </defs>
+          </svg>
+          <p class="gcap">左边是「手上已经有什么能直接用」，右边是逐字钉住的需求原文。丝从两头同时往外探，<em>两头都接上的那一格才凝固成节点</em>；倒推探到底也没接上的，<em>不许像黏菌那样静默收回</em>——停在原地、发虚、钉上编号，就是下面那五条未知。接上多少条不算成绩，剩几条没人认领才算。右下角那个空着的终点是 R4：一条丝都没指向它，因为它带着一句非空的豁免理由。</p>
+          <button class="btn replay">重播 · 生长过程</button>
+        </div>
+        <div class="terms only-up" id="terms">
+          <span class="term">R1 会不会串（租户之间 / 租户内多人）</span>
+          <span class="term">R2 为什么不带租户条件</span>
+          <span class="term">R3 拉高维度看怎么解</span>
+          <span class="term exempt">R4 已豁免 · 撤销的裁定<i class="rsn">豁免理由（判据要求非空，这里给全）：这一条原本要求「按人隔离」，但它指向的对象是一份写操作建议记录；同一轮里随后明确「这类裁定任何人都可以下」，按人隔离会推翻已经定下的裁定语义，所以撤销。原先承接它的节点改指 R5——因此地图上没有任何格子指向 R4，缺口依然是 0，但这一格是「有意不做」，不是「漏了」。</i></span>
+          <span class="term">R5 对话内容不许全员可见</span>
+        </div>
+        <div class="foggrid" id="mapgrid"></div>
+        <div class="unknownterms only-up" id="unknown"></div>
+        <div class="arsenal only-down">
+          <div class="pc" style="--c:oklch(72% .12 25)"><span class="ck">格子 · 校验 × 全库探针</span><span class="cn2">4 投中 · 签名相同</span><span class="pt2">件「门禁骨架」：读全库结构 → 逐条判据 → 打印计数与退出码。一份基座，四份薄实现。</span><span class="st ok">已实现 · 双判据齐</span></div>
+          <div class="pc" style="--c:oklch(74% .09 120)"><span class="ck">格子 · 规范 × 条款补写</span><span class="cn2">3 投中 · 签名相同</span><span class="pt2">件「条款—索引成对」：一处判据 + 一行索引，两处同轮，改完跑对账脚本点名只改一边的人。</span><span class="st ok">已实现 · 双判据齐</span></div>
+          <div class="pc" style="--c:oklch(70% .11 45)"><span class="ck">格子 · 存储 × 连接与授权</span><span class="cn2">2 投中 · 签名相同</span><span class="pt2">件「按特权分池取连接」：业务连接与高权连接两池，池本身就是防线，不靠每次记得设开关。</span><span class="st ok">已实现 · 双判据齐</span></div>
+          <div class="pc" style="--c:oklch(70% .11 45)"><span class="ck">格子 · 存储 × 迁移补齐</span><span class="cn2">2 投中 · 接缝已真</span><span class="pt2">件「三件套补齐」：安全开关 + 策略 + 强制约束一次写全。够两个就算真接缝，但重复未达三份，成本还没回来——处置写「记名不提取」并给理由，件表仍算它通过。</span><span class="st cand">候选 · 记名不提取</span></div>
+          <div class="pc" style="--c:oklch(72% .12 25)"><span class="ck">格子 · 校验 × 运行时对照</span><span class="cn2">2 投中 · 签名不同</span><span class="pt2">不提名。一个连真库读回，一个只是根因陈述——它们共享的是「都碰运行时」这个<em>属性</em>，不是一份接口契约。按属性抽出来的件没有接口可抽。</span><span class="st no">不提名 · 伪通用件</span></div>
+          <div class="pc" style="--c:var(--rule)"><span class="ck">另有 5 个单点格</span><span class="cn2">各 1 投中</span><span class="pt2">落盘归档 / 取证留档 / 对照用例 / 判定守卫 ×2。单点不成件；而且两个「判定守卫」一个在领域层一个在前端层，格子键是（层 × 角色），不同层不并格——并了就抽出一个没有实现的件。</span><span class="st cand">不提名</span></div>
+        </div>
+        <div class="readout" id="axread"></div>
+        <div class="meters only-up">
+          <span>终点 <b>5</b> 条</span><span>节点 <b>18</b> 个</span><span>未知 <b>5</b> 条</span>
+          <span class="res">缺口 <b>0</b></span><span class="res">镀金 <b>0</b></span><span class="res">豁免 <b>1</b></span><span class="res">阻塞 <b>0</b></span>
+          <span>裁定 <b>通过 · 退出码 0</b></span>
+        </div>
+        <div class="legend only-up">
+          <span><i></i>节点 · 已探明并写明承接哪条终点</span>
+          <span class="l2"><i></i>未知 · 已登记，探明动作写在旁边</span>
+          <span class="l3"><i></i>不阻塞 · 主动承担的风险，带理由</span>
+        </div>
+        <div class="cn only-up" style="margin-left:0"><span class="mk">门槛是什么</span><p>不是「全都知道」。是<em>每一个不知道都有编号、有探明动作、有非空理由</em>；缺口和镀金必须为 0——有节点不承接任何需求，就是多做的；有需求没有节点承接，就是漏做的。两条主动承担的风险（云端取证需授权、事件全量枚举未做）留在页面上，标着不阻塞，不折算成已完成。抹掉任意一个节点的「承接」，对账脚本立刻把它报成镀金：这条红线是活的。</p></div>
+        <div class="cn only-down" style="margin-left:0"><span class="mk">为什么还要第二把尺子</span><p>因为轴一全绿。缺口 0、镀金 0、退出码 0，十八个节点各自都有需求承接——地图是干净的，<em>代码库照样是重复的</em>。二部图的差集只回答「这条需求有没有人做」，不回答「这几个人是不是各写了一遍同一件事」；而且每一步都做了正确决定的局部最简，横向一比仍是五份。所以换一根轴重摆一次：不删节点、不改顺序，只改分组键，重复自己显形。判据同样活的——把任意一格的投中数改成 1，脚本立刻报空转件；把某一件的检查栏清空，它从「已实现」掉回「候选」。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 解剖台 ============ -->
+  <section id="anatomy">
+    <div class="sechead"><span class="num">04</span><h2>解剖台 · 两份底稿</h2></div>
+    <p class="lead">上面按「拦什么事故」横切，这一区按「它长在哪份文件里」纵切。真正承载「能好好写代码」这些细节的，就是两个文件名的东西：一份每次会话开头自动加载的路由索引，一份按需切片查询的开发手册。它们都不是私有魔法——文件名本身就是公开约定，任何项目明天就能建。点开每一章看它的真实骨架：标题逐条列全、照原样抄，只把可识别的名称换成功能性描述；带「正文」灰标的那几行不是原标题，是我对该节装了什么做的一句说明。每一章下面那行灰色小字是它归入的防线编号，来历和因果链写在 03 区，这一区不再重复一遍。</p>
+    <div id="docs"></div>
+    <div class="takeway">
+      <div><div class="no">可抄走 · 一</div><h6>常驻区只放三样东西</h6><p>定位方式、红线、收尾清单。其余全部按需加载。三百行换两千行不进上下文——省的是每一轮对话的预算，不是省一次点击。</p></div>
+      <div><div class="no">可抄走 · 二</div><h6>章节要有锚点，路由表要写行数</h6><p>手册的目录不是给人翻的，是给机器指路的坐标。但行号一定会漂，所以规则写成「以重新查锚点的结果为准，不信表里写死的行号」。</p></div>
+      <div><div class="no">可抄走 · 三</div><h6>每一行都要回答「它拦什么」</h6><p>速查表最右一列是已知陷阱，写的是具体事故形态，不是感想。没有这一列，一张表就只是一份清单， agent 抄完仍然会踩。</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 05 方法论 ============ -->
+  <section id="close">
+    <div class="sechead"><span class="num">05</span><h2>抽掉所有细节，剩下三条</h2></div>
+    <div class="laws">
+      <div class="law"><div class="no">一</div><p>模型只做路由，<br>事实交给脚本与落盘。</p><small>能让 AI 凭记忆答的东西，就不要让它凭记忆答。计数、覆盖、对账一律由确定性脚本产出，写进文件；上下文被压缩掉，文件还在。</small></div>
+      <div class="law"><div class="no">二</div><p>一个事实<br>只允许有一个真源。</p><small>同一个数字，只许一个地方算出来。凡是它的副本：写入时必须重算、历史数据要补正、默认值方向要和代码一致——三条一起对齐，缺一条就是静默错。两处各算一遍的账，最后一定有一处是错的，而且错得很安静。</small></div>
+      <div class="law"><div class="no">三</div><p>绿灯必须有<br>能力变成红灯。</p><small>任何「已通过 / 未发现 / 已完成」都要能指出：如果它是错的，哪个判据会变红。判据空转的绿灯不是证据，是装饰——本项目曾被一枚装饰品骗过一整章的隔离策略。</small></div>
+    </div>
+    <div class="final">
+      <p>写这十一层文档花掉的时间和&nbsp;token，<i>远小于</i>它替你省下的那笔账：</p>
+      <p class="wide">约定一旦不落盘，模型就在后续每一次会话里逐渐失去理智——凭记忆瞎写、把库改炸、再花半天收拾残局。</p>
+      <p class="punch">事故只发生一次，<br>这种消耗是每天都在付。</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="grid2">
+      <p><b>统计口径。</b>可复现脚本扫描全仓库 Markdown（跳过依赖与构建目录），取三级以内标题（代码块内的伪标题不计入）：
+      69 份文档 · 1067 条标题，重扫日期 2026-10-13；防线归属由「文档 + 章节」唯一决定，同一条标题只归一道。
+      03 区是这 1067 条里承载机制的部分，归成十一道防线，不是全量罗列：每道写一条因果链——什么时候触发、它能干什么、它解决什么问题、怎么实现、最后解决了什么。
+      04 区的章名与节名直接抄自那两份底稿的标题行，逐条列全，每章标注它归入哪道防线。两区是指针关系而不是复制关系：来历与因果链只在 03 区写一遍，04 区不再重述，同一句话不在两个区各写一份。
+      附区三张图不新增事实——事件链取自手册的单据全生命周期一节，双防线开关台的三个失效根因（以及它们两两叠加后的两种泄露组合）取自那次审计的更正表，
+      地图格子是一次真实交付的快照（终点 5 条 / 节点 18 个 / 未知 5 条），编号原样保留、名称一律换成功能性描述；
+      格子上方那张生长图也不另立事实——它的每一根丝都由同一批节点的承接关系画出，接不上的五条就是那五条未知，一条不多一条不少。
+      快照日期 2026-10-11，项目仍在开发中，标题结构与模块划分是稳定的，绝对数字会随迭代变化——
+      因此页面上的量级按快照读，不按实时读。</p>
+      <p><b>脱敏声明。</b>项目名、行业词、子系统名称、表名与字段名、接口路径、服务器地址、
+      商务信息已全部替换为功能性描述；未收录任何需求方原话与内部对话内容。
+      保留的是机制：它拦什么事故、在流程的哪一步拦、由谁判定通过。
+      本页无外部依赖，可离线打开。</p>
+    </div>
+  </footer>
+</div>
+
+<script>
+/* ================= 数据层：真实标题，脱敏措辞 ================= */
+const DATA=[
+{id:"P-01",name:"任务接收与调度",
+ why:"需求一进来就四步定位到该改哪个子系统，不做全仓库漫游。漫游烧掉的是预算和时间。",
+ fire:"会话第一轮，收到任务那一刻。反复出现的会话形态是：接手先把仓库读一遍，一行代码没改，预算已经见底。",
+ does:["解析意图：从任务里抽动词加名词，判它是新功能、缺陷、重构、配置还是性能","查关键词映射表：一行「任务说法」直接给出子系统、核心路径、相关实体与事件","按需读取：只读被改的文件和它直接依赖的接口定义","未命中才允许精确搜索，搜完接着执行，不回头做全量探索"],
+ stops:"「任务一进来就全仓库漫游，第一轮对话烧光预算还没改一行」，以及「不知道这段逻辑归谁管，于是改在了隔壁」。文件里现在明写着三条禁令——禁止结构遍历、禁止全量列目录、禁止先跑一遍确认环境，每一条都对应一次真实烧掉的会话。",
+ how:"一张二十余行的映射表，最右一列是「已知陷阱」，写具体事故形态而不是感想；没有这一列，这张表就只是一份清单，抄完仍然会踩。配套「两处同轮」：一条红线同时写进这张表和它指向的本体文件，只改一边，对账脚本直接报红。命令段末尾把已知的编译噪声显式登记成噪声，否则每一次干净运行都会被一条与本轮无关的报错拖成半小时排查。",
+ after:"命中即用、未命中才搜。一次半小时的无关探索被省掉，换成第一轮对话就开始改代码；「这段归谁管」从口头问答变成一次查表。",
+ ref:["AG:02","AG:03","AG:05"]},
+
+{id:"P-02",name:"按需加载与地图维护",
+ why:"两千行手册不整本塞进对话；改了代码必须同轮回写手册，行号以重新查锚点的结果为准。",
+ fire:"两处。一是手册长到两千行后仍然整本进上下文；二是按路由表里写死的行号读过去，读到的是隔壁章节。更早一次是需求方自己也说不清边界的时候。",
+ does:["查坐标表：任务场景 → 章节锚点 → 起始行 → 行数","先搜锚点拿实际行号，再按行数只读那一节","改完代码在同轮按变更类型回写对应章节","动手前先把「不知道」画成能对账的格子：终点、节点、未知、对账结果"],
+ stops:"「把两千行手册一次读进上下文」；「代码改了文档没改，下一次会话被自己的旧文档骗」；「拿到手册不知从哪儿读起」——目录那几条链接不承载内容，只负责把你送到该去的那一章。还有边界没摸清就动手：终点必须逐字抄需求原文，禁止改写得更「清楚」；节点要带承接的需求；未知项必须无悬空且不阻塞；对账结果由脚本写入，禁手改。",
+ how:"一份 15 类任务场景的查阅路由表，加一张 10 类变更的维护对照表。对照表里专门一类写明：改静态门禁脚本，必须同轮回写门禁清单与它已知的盲区——盲区不写进文档，下一个会话就会把「退出码 0」当成「没有问题」。行号漂移不靠人记：对账脚本逐条点名「表里的行号」与「锚点实际行号」的差额。两份文件之间唯一的接缝就是这一层。",
+ after:"常驻文件约三百行，手册两千行不进上下文，省的是每一轮对话的预算而不是省一次点击。边界在写第一行代码之前就跑通过，剩下的只是填格子。",
+ ref:["AG:06","AG:07","GD:目录"]},
+
+{id:"P-03",name:"系统档案",
+ why:"二十几个子模块各自负责什么、依赖谁，写成机器可查的档案。不知道边界时，哪儿都敢改。",
+ fire:"每次判断「这段逻辑该落在哪个模块」或「这个接口是不是已经存在」的时候；每次改一个可能牵动别处的字段之前。",
+ does:["按模块建档：核心类型、关键接口、常量、启动序列","工程结构与依赖图逐张列出，谁牵动谁一目了然","数据实体逐张建档：字段、约束、索引、触发器","上手路径写清：环境初始化、一键启动、手动分段启动"],
+ stops:"「改 A 不知道会牵动 B」「重复造一个已经存在的东西，或调用一个并不存在的接口」「以为这个字段存在、以为数据库有那个约束」。最直白的一次来自一处枚举对不上：界面侧多出一个状态值，数据库和逻辑层谁都不认它，于是一行数据永远停在无人接管的档位上。同名的东西在两处各有一套叫法，改一处漏一处。",
+ how:"逐档建档 + 依赖图 + 逐张结构档案。规模数字不硬写进常驻文件，交给门禁脚本实时数——写死的数字一定会过期，而过期的数字会被下一个会话当成事实。档案要做的只有一件事：让「这个概念归谁管」有唯一答案。",
+ after:"跨模块改动之前能先看见被牵动的邻居，而不是上线后才知道。档案里查得到就说明存在，查不到就是没有——不必靠猜。",
+ ref:["AG:01","GD:章 1","GD:章 2"]},
+
+{id:"P-04",name:"数据契约与一致性",
+ why:"同一笔账只允许一个真源。事件怎么命名、谁订阅谁、一张单据的全生命周期因果链，全部列成清单。",
+ fire:"任何写入数量、状态、额度、库存的代码；以及新增一条事件、一个新字段的那一刻。",
+ does:["事件命名约定 + 完整清单 + 谁订阅谁的映射表","一张单据从起草到交付的因果链逐跳列出","数量类写入逐条对照一致性七法则","派生列三条不变式：写入端重算 / 存量回填 / 默认值方向一致","计量口径分账：不同物理单位的数量禁止相加；人读编号取号禁用计数加一"],
+ stops:"主触发是一次「账面比现实好看」：产能不够时系统自作主张砍掉一部分排布，被砍掉的欠产没有落到任何地方，而是被吞进已经承诺出去的条目里——账上永远不缺，缺的是货。第二类是静默丢：发了一条没人监听的事件，不会崩、不会报错、不会重试，只在日志留一行警告；订阅回调里一次没被接住的异常会让那条订阅任务永久死亡，之后每次投递都发现「没有接收者」于是静默跳过——进程看起来完全健康、其余接口一切正常，只有那一个每次都等到超时才返回。第三条更晚：一次上线只加了列和默认值，默认值方向和代码判据相反，全部历史单据被误判成另一类产品，两个统计口径同时错。",
+ how:"七条法则由那次事故举一反三沉淀，之后所有数量类写入逐条对照。写法统一：判据 + 一句为什么——只有判据没有为什么的条目，通常撑不过下一次改写。出结构化的键那条明写「必须在调用点做」，因为在调用点用字段插值会绕开序列化注解；取号禁用计数加一，理由是取消和删除的号不回收，加一会重发出一个已经存在的号；默认档位从数据算出，不硬编码常量。",
+ after:"三类静默错各有各的判据：吞掉的欠产必须回落到未承诺的条目，漏挂订阅在评审时就被映射表暴露，派生列三条不变式缺一条就报错。症状排查有固定顺序：先翻日志找异常回溯，别先怀疑连接池和网络。",
+ ref:["GD:章 3","GD:章 4","GD:章 8"]},
+
+{id:"P-05",name:"隔离与安全门禁",
+ why:"多租户不串数据，且不靠自觉：提交前脚本硬拦，退出码不是 0 就不许提交。",
+ fire:"写任何按租户查的语句；新建一张表；以及每次提交之前的那一道。",
+ does:["第一道：每条查询显式带租户条件，这是唯一依据","第二道：隔离策略只做兜底，不得作为省略第一道的理由","取连接必须走带租户身份的入口，禁止手动设会话参数","提交前两道脚本硬拦，退出码不是 0 就不许提交"],
+ stops:"「租户之间串数据，而且数据库零报错零警告」——本项目最大的一次事故。起点是一句提问：多租户、还有租户内多个人，会不会串？审计前的估计数是七处不显式带条件的查询，实测一百三十余处，范围是原估的十九倍。同期查明：二十余张表只写了「强制约束」没写「安全开关」，而这两样是独立的事，缺开关时策略形同装饰品。还有一个新建的空租户，一登录就看见了别人的全部数据。",
+ how:"触发点是一句注释：某处写着「靠隔离层兜底」，这句话被当成了授权，后面就长出一百三十余处不显式带条件的查询。于是规则反过来说，并把那句话单独列为禁句。三件套缺一不可（缺写入校验会直接拒写）；安全开关与强制约束两件事都写；外连接的租户条件挂位置有规则；共享片段用相关列、不写死占位符编号；禁止依赖列的会话参数默认值。另有连接池双池加启动自检、预编译隔离语句、每轮人工复核的提交前规则与豁免清单（空理由无条件报红）。",
+ after:"从「靠人记得带条件」变成「不带条件提交不过去」。这三笔账换来的是：第一道永远是显式条件，第二道只做兜底，而且两道都有脚本对账，不靠自觉。",
+ ref:["AG:08","GD:章 6"]},
+{id:"P-06",name:"AI 能力治理与权限边界",
+ why:"对话能调哪些工具、以谁的身份调、写操作停在哪一档，是一份协议而不是临场发挥。",
+ fire:"给对话助手加一个新能力的那一刻；以及审查「它现在能碰到什么」的时候。",
+ does:["一句话话术 → 一次工具调用，链路画清","委派优先：能力落在业务模块自己那一侧，不在助手侧重写一遍","每个能力标读或写的档位，三档介入强度决定新能力怎么接","挂载新工具的标准动作：四处改动 + 一个测试兜底"],
+ stops:"触发点在审计里：对话侧一个查询工具的注释明写「依赖隔离层兜底」，自己不注入租户条件——而它的白名单里恰好有审计数据。这条路径的危险方向是读不是写，缺策略时一条都不生效。写能力的口子是同时封的：通用创建入口对流程类型没有白名单校验，因此严禁开放给对话；要加第三个写能力，必须先过安全评审。",
+ how:"一份二十余节的能力接入规范：形状与通用工具协议对齐，但多出四条确定性契约——单一真源、身份注入（模型无法伪造调用者）、读写门禁、新鲜度。专门有一节写「未开放与理由」，避免下一个人重新讨论一遍。",
+ after:"「这个助手现在能干什么」有一份能逐条打钩的清单，而不是一次次临场判断。新增能力有标准动作，不会漏挂某一处。",
+ ref:["GD:章 8"]},
+
+{id:"P-07",name:"模板与复用模式",
+ why:"新子系统、新接口、新迁移都有模板和标准签名，产出水平不取决于当天是谁在写。",
+ fire:"建第一个新模块、写第一个新接口、加第一个新迁移的时候；以及复制上一个模块的代码的时候。",
+ does:["四类文件模板 + 注册到启动序列 + 迁移清单","统一注册基座：新增能力不改基座","接口网关统一形状：请求、响应、路由定义、处理函数一个模子","十余类可复用模式速查，几乎每条带一句「必须在调用点做」"],
+ stops:"一条是老问题：新模块靠复制上一个模块长大，粘代码的时候把约束一起粘丢了。另一条更隐蔽——校验确实写了、测试也过了，但那个文件早已归档出源码树、没有任何入口引用它，门禁运行时零生效，于是「有没有真的接进编译」被写进模板清单第一项。还有「每个接口一套形状，前端只能逐条猜」和「每次都要重新找那个早就写好的工具函数」。",
+ how:"归并本身也归这一层管：常驻文件里那一节原先有 7 条标题，与手册对应小节逐字重复，本轮下沉成一段指针，只留一份副本——两份文件自己也在守「一个事实一个真源」。前端复用件另有规范：零外部依赖、四种缓动、逐帧引擎、内存安全，并写明适用与不适用场景。",
+ after:"「谁在写」不再是变量。抄模板的人拿到的不只是形状，还有粘代码时最容易丢的那几条约束。",
+ ref:["AG:04","GD:章 5","GD:章 7","GD:章 8","GD:附录"]},
+
+{id:"P-08",name:"设计与计划留档",
+ why:"动手之前先有设计规格（含范围界定与「明确不做」）和逐任务实施计划：7 份规格、6 份计划。",
+ fire:"需求澄清定稿、准备写第一行代码之前；以及多个会话并行改同一份计划的时刻。",
+ does:["规格必含章节：背景 / 需求 / 已确认口径 / 关键决策 / 术语 / 数据模型 / 前后端设计 / 安全 / 测试 / 验收 / 已知陷阱","「明确不做」单独成节，拒绝范围蔓延","实施规范分层：包含与不包含、已完成轮次不得重复实施","计划逐任务拆分：迁移 → 数据访问 → 处理函数 → 注册与订阅 → 编译校验 → 前端 → 端到端 → 文档收尾，每任务带验收标准"],
+ stops:"触发是并行会话互相踩：同一份计划被几个会话先后改写，上下文一被压缩，接手方既不知道当前进行到第几步、也不知道「怎么算通过」，于是把已经做完的步骤重跑一遍，顺手覆盖掉别人刚改的那段。",
+ how:"规格里必须有「明确不做」那一节，计划必须逐任务写验收标准——这两处不是格式洁癖，是给接手方的坐标。另有一栏「待用户否决的推荐默认」：未否决即按此实施，把「谁还没拍板」变成可见项而不是隐藏假设。素材来自设计规格库与实施计划库，不在本页点名那两份底稿里。",
+ after:"换会话不再重跑已完成的步骤，也不再覆盖别人的改动。范围蔓延在文档层就被挡住，不必等到代码评审。",
+ ref:[]},
+
+{id:"P-09",name:"跨会话交接",
+ why:"换一个会话就是一次失忆。交接卡片规定接手方必须三十秒内知道边界、陷阱、怎么算通过：12 份存档。",
+ fire:"方案要传给另一个项目或另一个会话、或一段调研要交给别人落地的那一刻。",
+ does:["固定字段：项目快照 / 目标任务 / 最快实现路径 / 已知陷阱 / 依赖约束 / 验收标准 / 上下文元数据","审查型：发现按高危·中危·低危·待澄清分级，遗漏检查三栏，修订记录逐条回应","实战型：本轮已改文件、按顺序的待测用例、已通过回归（交叉参考不必重跑）、测试数据与清理","数据协议交接七步、语言无关；参考实现清单全部是已验证存在的绝对路径"],
+ stops:"字段是按「漏哪栏就返工一次」攒出来的：涉及文件写模糊描述，接手方就重新摸索一遍；实现路径写成感想，到那儿没法执行；把没验证的接口写成不存在，就有人重造一遍。这三句看着像格式洁癖，实际对应的正是这几次返工。",
+ how:"模板现在有三条硬要求：涉及文件必须是具体路径、不许留占位符；最快实现路径必须可直接执行；已知陷阱要写具体事故形态，不写感想。另外有「架构决策记录：备选方案逐条编号」和 v1→v2→v3→v4 的版本修正清单，以及一栏「默认假设」——用户未拍板项，可被推翻。路由索引里那条自动生成规则，把它接在了任务接收那一步。",
+ after:"接手方不需要重跑一遍探索就能开工。默认假设被单独列出，推翻它是一次选择，不是一个事故。",
+ ref:["AG:02"]},
+
+{id:"P-10",name:"验收、留痕与运维",
+ why:"「已完成」三个字必须有证据：八项收尾、会话启动自检、审计存档，还要写明哪些没查、还剩什么未知。",
+ fire:"每次涉及代码的任务收尾时；每次新会话开头；每次迁移上线之前。",
+ does:["八项逐项打钩：接口 / 事件 / 迁移 / 新子系统 / 隔离 / 新模式 / 行号漂移 / 避坑经验","会话启动三项校验：数子系统、数迁移文件、数接口条数","迁移必做清单：安全开关 / 策略 / 强制约束 / 更新时间触发器 / 执行清单登记","审计存档带取证边界声明：哪些没查、还剩什么未知"],
+ stops:"这一层是被自己的门禁骗出来的。两道脚本当时退出码都是 0，但存档里逐条写明了它结构性看不见的三类：一条长语句里的子查询不报、另一种写法匹配不上、测试代码整块排除；还有一句更难看的话——退出码为 0 只证明三项元数据齐，不证明隔离真的生效。迁移那一侧同样专治静默失效：只写强制约束不写安全开关，数据库零报错零警告；迁移文件放进目录但没登记进执行清单，永不执行，同样零报错。",
+ how:"从那以后收尾清单强制写「哪些没查」，存档必须带取证边界声明，留痕文件里连「原估七处、实测一百三十余处」这种自己估错的记录都不删。八项里前六项管代码，最后两项管下一次会话：一项查行号漂移，一项要求把本轮踩到的避坑经验落到文件或本体条目——只有这两项不会让当前功能变好，但它们是整份清单里唯一能让同类错误不复发的一栏。清单是打钩用的，不是参考用的。",
+ after:"三项校验不是拿来确认环境能跑的，是拿来确认文档没过期：拿文档里记的数和现场实际数一遍，差额就是文档欠的账，差异过大时先重写那一节再动手。「上线之后才发现根本没生效」这一类，被前置成一张打钩表。",
+ ref:["AG:09","AG:10","GD:章 9"]},
+
+{id:"P-11",name:"提问、澄清与对抗审查",
+ why:"把「问什么、什么时候不许动手、谁来自查」也写成规则，并要求有人专门来拆这个方案。",
+ fire:"收到需求的第一时间；前置问题还没敲定时；方案写完、准备动手之前。",
+ does:["先识别需求类型：实施 / 方案讨论 / 决策 / 可行性 / 诊断 / 纠错","决策树定提问边界：只问前置已全部敲定的问题，下游等上游","事实与决策分离：能自查的不问人，取舍必须问人","共识门禁：未确认前不动手写码；禁止把无歧义的维度列出来凑数","对抗审查换一个独立的认知源，禁止自查自过"],
+ stops:"触发是一次规划跑偏：把需求方那句话改写得更「清楚」之后，方案忠实的是我的改写版本，不是原文，验收自然对不上。后来定死两条——终点锚必须逐字抄需求原文，禁止改写；审查必须换一个独立认知源来做，靶子是需求方真正的评估函数，不是命题的字面。剩下的类型识别、提问边界、共识门禁，都是这套纪律的下级条款。",
+ how:"优先级分层（必须 / 重要 / 可以 / 不做）管范围，失效场景穷举管边界，影响分析管波及面，验收标准可测性管「怎么算做完」。对抗审查输出为分级报告，修订记录逐条回应，处置表带代价列。项目级术语表与架构决策记录目前散在单份规格与交接存档里，尚未沉淀为常驻文件——这一条以缺口形式留在页面上，不折算成已完成。这套纪律本身定义在对话侧，不在本页点名那两份底稿里。",
+ after:"「以为做完了」和「需求方以为说清楚了」之间的那道缝被显式管理。没沉淀的资产不会被平均值抹掉。",
+ ref:[]}
+];
+const STATS=[
+ {v:11,k:"道防线",n:"按「拦什么事故」划分 · 每道一条五拍因果链"},
+ {v:69,k:"份开发辅助文档",n:"全仓库 Markdown · 跳过依赖与构建目录 · 重扫于 2026-10-13"},
+ {v:1067,k:"条标题（三级以内）",n:"全量扫描口径 · 标题清单在 04 区逐条列出"},
+ {v:109,k:"条手册标题全量收录",n:"04 区逐条列出；正文约 2200 行 / 170KB，按锚点切片按需加载"},
+ {v:560,k:"份验证留痕",n:"存档目录下的文件数 · 截图 · 快照 · 脚本输出"},
+ {v:12,k:"份跨会话交接存档",n:"含审查型与实战型两类模板"},
+ {v:13,k:"份设计与计划",n:"7 份设计规格 + 6 份实施计划"},
+ {v:2,k:"道提交前脚本门禁",n:"退出码不是 0 就不许提交"},
+ {v:8,k:"项强制收尾检查",n:"每次代码任务结束逐项打钩"},
+ {v:85,k:"张业务表纳入隔离对账",n:"由门禁脚本动态计数，非硬写"},
+ {v:64,k:"次数据结构迁移",n:"每个都要过必做清单"},
+ {v:6,k:"个内置角色分工",n:"评审 / 调试 / 质检 / 调研 / 界面操作 / 全栈"}
+];
+
+/* ================= 渲染 ================= */
+const rail=document.getElementById('rail'),defs=document.getElementById('defs');
+const secs=[{id:"s1",t:"01 对照"},{id:"specs",t:"02 规模"},{id:"s3",t:"03 防线"},{id:"flow",t:"附 三图"},{id:"anatomy",t:"04 底稿"},{id:"close",t:"05 三条"}];
+secs.forEach(s=>{const a=document.createElement('a');a.href='#'+s.id;a.textContent=s.t;a.dataset.for=s.id;rail.appendChild(a)});
+const railAdd=rail.querySelectorAll('a');
+
+// 规格表
+const stat=document.getElementById('stat');
+STATS.forEach((s,i)=>{
+  const d=document.createElement('div');d.className='cell';
+  d.style.transitionDelay=(i%4*70)+'ms';
+  d.innerHTML='<div class="v" data-v="'+s.v+'">0</div><div class="k">'+s.k+'</div><div class="n">'+s.n+'</div>';
+  stat.appendChild(d);
+});
+
+// 防线 · 五拍因果链：触发 / 能干 / 解决什么 / 怎么实现 / 最后省掉什么
+const FNM={AG:"AGENTS.md",GD:"DEVELOPMENT_GUIDE.md"};
+const PNAME={};DATA.forEach(d=>{PNAME[d.id]=d.name});
+const CH_INDEX={};
+DATA.forEach((d,i)=>{
+  const el=document.createElement('article');el.className='d';el.style.transitionDelay=(i*45)+'ms';
+  el.innerHTML=`
+    <button aria-expanded="false">
+      <span class="id">${d.id}</span>
+      <span class="nm">${d.name}</span>
+      <span class="ct">${d.ref.length?d.ref.length+' 处出处':'外部资产'}</span>
+      <span class="why">${esc(d.why)}</span>
+    </button>
+    <div class="panel"><div>
+      <div class="refs"><span class="lbl">出处 · 点在 04 区展开对应章节</span>${
+        d.ref.length?d.ref.map(r=>`<button class="ref" data-ch="${r}">${FNM[r.slice(0,2)]} · ${esc(r.slice(3))}</button>`).join(''):
+        '<span class="ref static">不在这两份底稿里</span>'}</div>
+      <div class="beats">
+        <div class="beat"><b>什么时候触发</b><p class="bt">${esc(d.fire)}</p></div>
+        <div class="beat"><b>它能干什么</b><ol class="flow-steps">${
+          d.does.map((s,si)=>`<li class="bt" style="transition-delay:${si*40}ms">${esc(s)}</li>`).join('')}</ol></div>
+        <div class="beat"><b>它解决什么问题</b><p class="bt">${esc(d.stops)}</p></div>
+        <div class="beat"><b>怎么实现</b><p class="bt">${esc(d.how)}</p></div>
+        <div class="beat gain"><b>最后解决了什么</b><p class="bt">${esc(d.after)}</p></div>
+      </div>
+    </div></div>`;
+  el.querySelector('button').addEventListener('click',()=>open(el,!el.classList.contains('open')));
+  el.querySelectorAll('.ref').forEach(b=>b.addEventListener('click',ev=>{ev.preventDefault();gotoCh(b.dataset.ch)}));
+  defs.appendChild(el);
+});
+function gotoCh(k){
+  const c=CH_INDEX[k];if(!c)return;
+  open(c,true);
+  window.scrollTo({top:c.getBoundingClientRect().top+window.scrollY-90,behavior:'instant'});
+  c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+}
+let totalTitles=0;
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function open(el,on){
+  el.classList.toggle('open',on);
+  el.querySelector('button').setAttribute('aria-expanded',on);
+}
+
+/* ================= 数据层 2：两份底稿的全量标题树（原样抄，仅替换标识符） ================= */
+/* b:1 = 本节没有下级标题，这一行是我对正文承载内容的说明（页面上带「正文」标记） */
+const DOCS=[
+{name:"路由索引",file:"AGENTS.md",
+ meta:"18 条标题<br>1 个一级 · 10 个二级 · 7 个三级<br>约 300 行 · 每次会话开头自动加载 · 全文常驻上下文",
+ role:"它不是手册，是地图：告诉一个刚醒过来、上一次会话全忘了的 agent 四件事——这个系统长什么样、活儿进来先落到哪、哪几条红线不查也会踩、什么时候必须回写文档。<i>它是唯一一份每次自动进上下文的文件，所以每一行都要值回那点预算。</i>",
+ note:"这份文件标题少（18 条），因为它的正文全是判据：二十余行「任务说法→子系统」映射表、20 条模块硬约束、十余类查阅路由、10 类维护对照、8 项收尾打钩、7 条常驻约束。下面带「正文」标记的行，表示该节没有下级标题，装内容的是一张表或一段编号约束。",
+ chapters:[
+  {id:"01",name:"项目概述",p:["P-03"],heads:[{t:"一段话：技术栈与版本基线、架构形态、规模量级；数据表数量不硬写——唯一真源是门禁脚本的实时计数",b:1}]},
+  {id:"02",name:"启发式任务接收协议",p:["P-01","P-09"],heads:[{t:"第 1 步 解析意图（秒级）"},{t:"第 2 步 关键词→模块映射（即查即用）"},{t:"第 3 步 按需读取（最小集原则）"},{t:"第 4 步 执行"},{t:"交接上下文自动生成规则"}]},
+  {id:"03",name:"模块关键词速查表",p:["P-01"],heads:[{t:"二十余行映射表：任务说法 → 子系统 → 核心路径 → 相关数据实体 → 相关事件；每行带「已知陷阱」列",b:1},
+          {t:"20 条模块硬约束：排单域 15 条 · 办公流程域 4 条 · 事件总线域 1 条，每条一行判据并指向本体文件",b:1}]},
+  {id:"04",name:"能力注册基座（按需读，勿在此复述）",p:["P-07"],heads:[{t:"正文只剩：三行最小用法、初始化三参签名、源码位置，以及「完整用法见开发手册对应章节」",b:1},
+          {t:"被搬走的 7 条标题（快速开始 / 注册事件订阅 / 新增自定义注册位 / 标准签名 / 接口速查 / 内置常量 / 设计原则）现在只有一个副本——见下面那份文件的第 7.7 节",b:1}]},
+  {id:"05",name:"常用命令",p:["P-01"],heads:[{t:"四段命令：编译检查 / 分模块测试 / 全量测试 / 文档契约对账门禁；并明示哪一项属预存噪声可跳过",b:1}]},
+  {id:"06",name:"按需查阅路由",p:["P-02"],heads:[{t:"查阅路由表"},{t:"使用示例"}]},
+  {id:"07",name:"增量维护规则",p:["P-02"],heads:[{t:"一张 10 类对照表：变更类型 → 必须同步更新的章节；并规定「两处同轮」与口径改动三处对齐",b:1}]},
+  {id:"08",name:"核心架构约束（常驻记忆）",p:["P-05"],heads:[{t:"7 条编号约束：错误不外泄 / 隔离双防线顺序 / 事件命名 / 标准签名 / 迁移四项必做 / 写操作留审计 / 统一网关结构",b:1},
+          {t:"每条只留短判据，根因与全量清单指回手册对应章节，本文件不复述",b:1}]},
+  {id:"09",name:"开发任务收尾检查清单（强制）",p:["P-10"],heads:[{t:"8 个逐项打钩：接口 / 事件 / 迁移 / 新子系统 / 隔离 / 新模式 / 行号漂移 / 避坑经验",b:1}]},
+  {id:"10",name:"会话启动协议",p:["P-10"],heads:[{t:"三项校验（数子系统 / 数迁移文件 / 数接口条数）+ 三档结果处理",b:1}]}
+ ]},
+{name:"开发手册",file:"DEVELOPMENT_GUIDE.md",
+ meta:"109 条标题<br>1 个一级 · 11 个二级 · 71 个三级 · 26 个四级<br>约 2200 行 · 170KB · 不常驻，按坐标表指哪读哪",
+ role:"知识本体。九章加一份附录，但从不整本加载：改隔离只读第 6 章，建新模块只读第 7 章，写迁移只读 9.2 的必做清单。<i>每一章都在回答同一句话——这件事的正确做法，有没有第二个版本。</i>如果有，说明这一章还没写到位。",
+ note:"下面把这 109 条标题逐条列全。章号保留原文编号（1.1、6.0、8.14 这些编号本身就是查阅坐标的一部分）；唯一的改动是把可识别的子系统名、字段名、接口路径换成功能性描述。",
+ chapters:[
+  {id:"目录",name:"目录",p:["P-02"],heads:[{t:"1–9 章链接清单（无下级标题）",b:1}]},
+  {id:"章 1",name:"项目总览与架构",p:["P-03"],heads:[{t:"1.1 技术栈"},{t:"1.2 工程结构（21 个子模块）"},{t:"1.3 依赖图"},{t:"1.4 架构总览"}]},
+  {id:"章 2",name:"子系统模块参考",p:["P-03"],heads:[{t:"2.1 基础共享类型"},
+          {t:"2.2 事件总线",s:["核心类型","关键接口","常量"]},
+          {t:"2.3 多租户基础设施",s:["核心子系统","关键接口"]},
+          {t:"2.4 存储层"},{t:"2.5 应用引擎",s:["核心类型","启动序列"]},{t:"2.6 审计日志"},
+          {t:"2.7 业务模块一览"},{t:"2.8 即时通讯"},{t:"2.9 办公自动化"},{t:"2.10 大模型意图识别"},
+          {t:"2.11 对话助手"},{t:"2.12 实时推送"},{t:"2.13 插件系统"},
+          {t:"2.14 出库装载台（硬件插件）"},{t:"2.15 排单系统（排样模板 + 排单方案）"},
+          {t:"2.16 报表聚合（工业通用报表）"},{t:"2.17 售后退货（退换 + 报废重发）"},
+          {t:"2.18 哨兵看门狗（事件流静默检测，确定性零模型）"}]},
+  {id:"章 3",name:"数据结构参考",p:["P-04"],heads:[{t:"3.1 数据实体总览（58 张）"},
+          {t:"3.2 核心业务实体逐张结构",s:["要货单据","载具与批次","发货与车次","装卸库位","分层库存账","待发运暂存","售后单","售后条目","逆向资金流水","审批策略"]},
+          {t:"3.3 枚举类型"},{t:"3.4 关键索引（48 个）"},{t:"3.5 触发器"}]},
+  {id:"章 4",name:"事件驱动架构",p:["P-04"],heads:[{t:"4.1 事件命名约定"},
+          {t:"4.2 完整事件清单",s:["领域事件（业务逻辑发布）","基础设施事件（内部管道）"]},
+          {t:"4.3 领域事件订阅映射"},{t:"4.4 单据全生命周期事件流"},{t:"4.5 因果链追踪"}]},
+  {id:"章 5",name:"统一网关模式",p:["P-07"],heads:[{t:"5.1 请求流转"},{t:"5.2 请求结构"},{t:"5.3 响应结构"},{t:"5.4 路由定义结构"},
+          {t:"5.5 处理函数编写模式"},{t:"5.6 完整接口路由表"}]},
+  {id:"章 6",name:"多租户数据隔离",p:["P-05"],heads:[{t:"6.0 两道静态门禁（提交前必跑，退出码必须 0）"},{t:"6.1 连接池安全模式"},
+          {t:"6.2 隔离策略模式（三件套，缺一即静默失效）"},{t:"6.3 会话参数的三个必炸点（写查询前先看）"},
+          {t:"6.4 条件书写规则（三条，都是实测踩过才写下的）"},{t:"6.5 特殊情况"},
+          {t:"6.6 预编译隔离语句（零分配优化）"}]},
+  {id:"章 7",name:"新模块开发指南",p:["P-07"],heads:[{t:"7.1 创建步骤"},{t:"7.2 模块入口模板"},{t:"7.3 处理函数模板"},{t:"7.4 事件模板"},
+          {t:"7.5 注册到启动序列"},{t:"7.6 数据库迁移"},
+          {t:"7.7 能力注册基座使用",s:["快速开始：注册新路由","注册事件订阅（声明式记录）","新增自定义注册位（扩展基座能力）","初始化标准签名","核心接口速查","内置注册位常量","设计原则"]},
+          {t:"这一节原先在常驻文件里有一份逐字副本（7 条标题），本轮归并后只留这里——两份文件自己也在守「一个事实一个真源」",b:1}]},
+  {id:"章 8",name:"可复用模式速查",p:["P-04","P-06","P-07"],heads:[{t:"8.1 错误处理模式（已安全化）"},{t:"8.2 审计日志模式"},{t:"8.3 发布领域事件模式"},
+          {t:"8.4 订阅领域事件模式"},{t:"8.5 数据库查询模式"},{t:"8.6 实时推送模式"},
+          {t:"8.7 权限标签约定"},{t:"8.8 数据一致性七法则（由一次幽灵欠产事故举一反三沉淀）"},
+          {t:"8.9 对话工具委派模式（助手接入业务域的唯一正道）"},
+          {t:"8.10 派生列模式：一个事实只留一个真源"},{t:"8.11 默认档位从数据算出，不硬编码常量"},
+          {t:"8.12 复合键出 JSON：必须在调用点展平，序列化注解护不住插值"},
+          {t:"8.13 人读编号取号模式：租户级串行锁 + 数值最大值，禁用计数加一"},
+          {t:"8.14 租户隔离双防线模式（显式条件为主 + 策略为辅 + 自检 + 静态门禁）"},
+          {t:"8.15 事件受众策略模式（受众由发布方声明，缺受众宁可丢弃不广播）"}]},
+  {id:"章 9",name:"迁移与运维约定",p:["P-10"],heads:[{t:"9.1 迁移文件命名"},{t:"9.2 迁移必做清单"},{t:"9.3 审计日志分区管理"},{t:"9.4 种子数据"}]},
+  {id:"附录",name:"附录A 核心公共函数速查表",p:["P-07"],heads:[{t:"按模块列出公共函数与用途的一张长表（无下级标题）",b:1}]}
+ ]}
+];
+
+const docsEl=document.getElementById('docs');
+DOCS.forEach(doc=>{
+  const box=document.createElement('div');box.className='doc';
+  box.innerHTML=`
+    <div class="dh"><span class="tag">${doc.file}</span><h3>${doc.name}</h3><div class="dmeta">${doc.meta}</div></div>
+    <p class="role">${doc.role}</p>
+    <div class="chapters"></div>
+    <div class="note">${doc.note}</div>`;
+  const ch=box.querySelector('.chapters');
+  doc.chapters.forEach((c,i)=>{
+    const cnt=c.heads.reduce((a,h)=>a+1+(h.s?h.s.length:0),0);
+    const key=(doc.file==='AGENTS.md'?'AG:':'GD:')+c.id;
+    const el=document.createElement('article');el.className='d';el.style.transitionDelay=(i*35)+'ms';
+    el.dataset.ch=key;
+    CH_INDEX[key]=el;
+    el.innerHTML=`
+      <button aria-expanded="false">
+        <span class="id">${c.id}</span>
+        <span class="nm">${c.name}</span>
+        <span class="ct">${cnt} 条</span>
+        <span class="why">归入 03 区 ${c.p.map(x=>x+' '+PNAME[x]).join(' · ')}</span>
+      </button>
+      <div class="panel"><div>
+        <div class="grp" style="padding-top:4px">
+          <ul class="tl">${c.heads.map((h,ti)=>{
+            const lab=h.b?'<span class="bod">正文</span>':'';
+            const subs=(h.s&&h.s.length)?`<div class="subs">${h.s.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`:'';
+            return `<li class="bt" style="transition-delay:${ti*22}ms"><span>${lab}<span class="tx">${esc(h.t)}</span></span>${subs}</li>`;
+          }).join('')}</ul>
+        </div>
+      </div></div>`;
+    el.querySelector('button').addEventListener('click',()=>open(el,!el.classList.contains('open')));
+    ch.appendChild(el);
+  });
+  docsEl.appendChild(box);
+});
+document.querySelectorAll('#defs .ref').forEach(b=>{
+  const el=CH_INDEX[b.dataset.ch];
+  if(el)b.title=el.querySelector('.nm').textContent;
+});
+totalTitles=document.querySelectorAll('.bt').length;
+document.getElementById('tally').textContent='本页 '+totalTitles+' 段 · 每道防线五拍 · 04 区标题逐条列全';
+
+/* ---------- 搜索 ---------- */
+const q=document.getElementById('q'),tally=document.getElementById('tally'),toggle=document.getElementById('toggle');
+let allOpen=false;
+q.addEventListener('input',()=>{
+  const term=q.value.trim().toLowerCase();
+  let hits=0,lines=0;
+  document.querySelectorAll('#defs .d, #docs .d').forEach(el=>{
+    let any=false;
+    el.querySelectorAll('.bt').forEach(row=>{
+      const host=row.querySelector('.tx')||row;
+      const raw=host.textContent;
+      lines++;
+      if(!term){host.innerHTML=esc(raw);row.classList.remove('hit');return}
+      const idx=raw.toLowerCase().indexOf(term);
+      if(idx<0){host.innerHTML=esc(raw);row.classList.remove('hit')}
+      else{any=true;hits++;row.classList.add('hit');
+        host.innerHTML=esc(raw.slice(0,idx))+'<mark>'+esc(raw.slice(idx,idx+term.length))+'</mark>'+esc(raw.slice(idx+term.length));}
+    });
+    el.querySelectorAll('.beat,.grp').forEach(g=>{
+      const vis=!term||[...g.querySelectorAll('.bt')].some(r=>r.classList.contains('hit'));
+      g.style.display=vis?'':'none';
+    });
+    el.classList.toggle('hide',term?!any:false);
+    if(term&&any)open(el,true);
+    if(!term)open(el,false);
+  });
+  tally.innerHTML=term?('命中 <b>'+hits+'</b> / 全页 '+lines+' 段'):('本页 '+totalTitles+' 段 · 每道防线五拍 · 04 区标题逐条列全');
+});
+toggle.addEventListener('click',()=>{
+  allOpen=!allOpen;
+  document.querySelectorAll('.d').forEach(el=>{if(!el.classList.contains('hide'))open(el,allOpen)});
+  toggle.textContent=allOpen?'全部收起':'全部展开';
+});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&q.value){q.value='';q.dispatchEvent(new Event('input'));q.blur()}});
+
+/* ---------- 附图 · 两条投影轴 ---------- */
+const LAYER_C={存储:'oklch(70% .11 45)',校验:'oklch(72% .12 25)',规范:'oklch(74% .09 120)',
+  领域:'oklch(72% .08 210)',前端:'oklch(72% .10 300)'};
+const R_C={R1:'oklch(72% .12 25)',R2:'oklch(72% .11 60)',R3:'oklch(74% .10 130)',R5:'oklch(72% .09 215)'};
+const MAP_NODES=[
+ ["N1","审计报告 · 租户之间与租户内分别落盘","R1","存储","落盘归档"],
+ ["N2","缺租户条件的查询全量清单","R2","校验","全库探针"],
+ ["N3","「靠兜底」的设计意图证据","R2","规范","取证留档"],
+ ["N4","运行时身份实测","R2 R3","校验","运行时对照"],
+ ["N5","策略完整性缺陷","R2 R3","校验","全库探针"],
+ ["N6","根因 · 迁移规范缺开关条款","R2","规范","条款补写"],
+ ["N7","根因 · 测试无双租户对照","R2 R3","校验","运行时对照"],
+ ["N8","补齐开关与策略","R3","存储","迁移补齐"],
+ ["N9","补齐显式条件","R3","存储","迁移补齐"],
+ ["N10","运行时身份降级","R3","存储","连接与授权"],
+ ["N11","系统连接清残留","R3","存储","连接与授权"],
+ ["N12","双租户正对照用例","R3","校验","对照用例"],
+ ["N13","错误层序注释更正","R2 R3","规范","条款补写"],
+ ["N14","规范补条款防复发","R3","规范","条款补写"],
+ ["N15","推送受众策略 · 取不到即丢弃","R5","领域","判定守卫"],
+ ["N16","判据常驻为门禁脚本","R3","校验","全库探针"],
+ ["N17","前端归属守卫收敛成一处","R5","前端","判定守卫"],
+ ["N18","对话隔离现状取证","R5","校验","全库探针"]
+];
+const MAP_UNKNOWN=[
+ ["U1","漏写开关是缺陷还是有意为之","已探明",""],
+ ["U2","云端运行时身份是否同为最高权限","需授权 · 不阻塞","nb"],
+ ["U3","身份降级后的授权面有多大","已探明",""],
+ ["U4","测试基建能否承载双租户对照","已探明",""],
+ ["U5","还有哪些推送载荷含个人内容","全量枚举未做 · 不阻塞","nb"]
+];
+(function buildMap(){
+  const g=document.getElementById('mapgrid'), fig=g.closest('.fig');
+  const cards=MAP_NODES.map((n,i)=>{
+    const d=document.createElement('div');d.className='nt';d.style.setProperty('--i',i);
+    d.innerHTML='<span class="nid">'+n[0]+'</span><span class="nlbl">'+esc(n[1])+'</span><span class="nref"></span>';
+    g.appendChild(d);return d;
+  });
+  const u=document.getElementById('unknown');
+  MAP_UNKNOWN.forEach((n,i)=>{
+    const s=document.createElement('span');s.className='term'+(n[3]?' '+n[3]:'');s.style.setProperty('--i',i);
+    s.textContent=n[0]+' '+n[1]+' · '+n[2];u.appendChild(s);
+  });
+  document.querySelectorAll('#terms .term').forEach((t,i)=>t.style.setProperty('--i',i));
+  const READ={
+   up:'轴一 · 需求承接 ｜ 终点 <b>5</b> 条（R4 已豁免，无节点指向它）｜ 节点 <b>18</b> 个 ｜ 倒推逼出未知 <b>5</b> 条，其中 <b>2</b> 条不阻塞 ｜ 双向差集 <b>缺口 0 · 镀金 0</b> ｜ 拓扑稀疏度 <b>18 ÷ 5 = 3.6</b>，只报数不设阈值（一个项目的实测值不构成分布）｜ 裁定 <b>通过 · 退出码 0</b>',
+   down:'轴二 · 层 × 角色 ｜ 同一批 <b>18</b> 个节点，一个不删、顺序不变 ｜ <b>10</b> 个格子：<b>5</b> 格 ≥2 成员，<b>5</b> 格单点 ｜ 提名 <b>4</b> 件（<b>3</b> 已实现 · <b>1</b> 候选）｜ <b>1</b> 格共享属性不共享契约，判不提名 ｜ 裁定 <b>通过 · 退出码 0</b>——不给源码路径就拿不到 0：反证、引用图、真实引用三条判据全都无输入'
+  };
+  function paint(ax){
+    fig.dataset.ax=ax;
+    cards.forEach((d,i)=>{
+      const n=MAP_NODES[i], rs=n[2].split(' ');
+      d.style.setProperty('--c',ax==='up'
+        ?(rs.length>1?'linear-gradient(90deg,'+R_C[rs[0]]+' 0 50%,'+R_C[rs[1]]+' 50% 0)':R_C[rs[0]])
+        :LAYER_C[n[3]]);
+      d.querySelector('.nref').textContent=ax==='up'?'承接 · '+n[2]:n[3]+' · '+n[4];
+    });
+    document.getElementById('axread').innerHTML=READ[ax];
+    fig.querySelectorAll('.ax').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ax===ax)));
+  }
+  fig.querySelectorAll('.ax').forEach(b=>b.addEventListener('click',()=>paint(b.dataset.ax)));
+  paint('up');
+})();
+
+/* ---------- 图三 · 生长过程（菌丝：两端同探，接不上的不许收回） ---------- */
+(function buildGrow(){
+  const svg=document.getElementById('hyphae');
+  if(!svg)return;
+  const NS='http://www.w3.org/2000/svg';
+  const O={x:26,y:250}, RX=974, RY={R1:70,R2:160,R3:250,R4:340,R5:430};
+  const POS=MAP_NODES.map((n,i)=>({x:300+(i%6)*82,y:130+Math.floor(i/6)*95}));
+  const mk=(t,at,txt)=>{const e=document.createElementNS(NS,t);
+    for(const k in at)e.setAttribute(k,at[k]);
+    if(txt!==undefined)e.textContent=txt;svg.appendChild(e);return e;};
+  const arc=(x1,y1,x2,y2,k)=>{const mx=(x1+x2)/2,my=(y1+y2)/2+k;
+    return 'M'+x1+','+y1+' Q'+mx+','+my+' '+x2+','+y2;};
+  /* 正推：起点 → 每个节点 */
+  MAP_NODES.forEach((n,i)=>mk('path',{class:'st-b',pathLength:'1',style:'--i:'+i,
+    d:arc(O.x,O.y,POS[i].x,POS[i].y,((i%3)-1)*30)}));
+  /* 倒推：终点 → 节点。每一条丝都由 MAP_NODES 的承接列画出，不另立事实 */
+  MAP_NODES.forEach((n,i)=>n[2].split(' ').forEach(r=>mk('path',{class:'st-r',pathLength:'1',
+    style:'--i:'+i+';--c:'+R_C[r],d:arc(RX,RY[r],POS[i].x,POS[i].y,((i%4)-1.5)*26)})));
+  /* 两头都接上的那一格才凝固 */
+  MAP_NODES.forEach((n,i)=>mk('circle',{class:'nd',cx:POS[i].x,cy:POS[i].y,r:6,
+    style:'--i:'+i+';--c:'+R_C[n[2].split(' ')[0]]}));
+  MAP_NODES.forEach((n,i)=>mk('text',{class:'lb',x:POS[i].x,y:POS[i].y-15,'text-anchor':'middle',
+    style:'--i:'+i},n[0]));
+  /* 探不通的枝：停在原地发虚，不静默收回 */
+  MAP_UNKNOWN.forEach((u,k)=>{
+    const y=448+k*14, tip=900-k*140;
+    mk('path',{class:'st-u',pathLength:'1',style:'--i:'+(MAP_NODES.length+k),
+      d:arc(RX,y,tip,y,-16)});
+    mk('circle',{class:'tip',cx:tip,cy:y,r:5,style:'--i:'+(MAP_NODES.length+k)});
+    mk('text',{class:'lb',x:tip-12,y:y-6,'text-anchor':'end',
+      style:'--i:'+(MAP_NODES.length+k)},u[0]);
+  });
+  /* 终点锚、起点锚，以及那条没有一根丝指向的豁免终点 */
+  Object.keys(RY).forEach(r=>{
+    mk('circle',{class:'nd',cx:RX,cy:RY[r],r:5,style:'--i:0;--c:'+(R_C[r]||'var(--accent)')});
+    mk('text',{class:'lb axl',x:RX,y:RY[r]-15,'text-anchor':'middle',style:'--i:0'},r);
+  });
+  mk('circle',{class:'exempt-ring',cx:RX,cy:RY.R4,r:13});
+  mk('text',{class:'lb nolm',x:RX-24,y:RY.R4+5,'text-anchor':'end',style:'--i:24'},'无一条指向');
+  mk('circle',{class:'nd',cx:O.x,cy:O.y,r:6,style:'--i:0;--c:var(--paper-dim)'});
+  mk('text',{class:'lb axl',x:O.x,y:O.y-18,'text-anchor':'start',style:'--i:0'},'起点');
+})();
+
+/* ---------- 附图 · 双防线开关台 ---------- */
+const lab=document.getElementById('lab'),vd=document.getElementById('verdict');
+const VERD={
+ ok:["两道都在","查询显式带租户条件，隔离策略也存在，安全开关与强制约束都写了。第三件事是不靠自觉：提交前两道脚本硬拦，退出码不是 0 就不许提交。",""],
+ pred:["此刻仍然正确，所以这句话不会当场暴露","第一道被省掉时，数据暂时靠第二道兜住，看起来一切正常。但「把责任推给兜底」这件事本身被列为禁句：它在本项目被当成授权用，后面长出一百三十余处不显式带条件的查询。","<em>当场不泄露</em> · 全靠第二道还在 · 关掉下面任一个开关再试"],
+ enable:["兜底这一格是空的","数据此刻不串——因为第一道还在。但「强制约束」写了、「安全开关」没写，这两样是独立的：缺开关时策略整条不生效，数据库零报错零警告。于是每一条漏写条件的查询都不再有人拦，而你不知道哪条漏了。","<em>数据库不报错</em> · 零报错零警告 · 所以没人发现"],
+ force:["兜住了别人，没兜住自己人","数据此刻不串——因为第一道还在。但开关写了、策略也写了，唯独没写强制约束：策略不覆盖属主角色与带旁路权限的角色，而这个库里业务连接恰好就是那个角色。看着两道齐全，实际只有一道半。","<em>数据库不报错</em> · 策略列表里它明明在 · 所以没人发现"],
+ leakEnable:["策略形同装饰品","两道一起塌：查询不显式带条件，兜底又整条不生效。本项目实测二十余张表因此长期裸奔；新建一个空租户，一登录就看见别人的全部数据。","<em>已经泄露</em> · 数据库仍然零报错零警告"],
+ leakForce:["兜住了别人，没兜住自己人","两道一起塌：查询不显式带条件，而策略偏偏不覆盖属主角色——业务连接恰好就是那个角色，照样整库可见。","<em>已经泄露</em> · 看着像配好了 · 实际没生效"]
+};
+function calcLab(){
+  const on=k=>lab.querySelector('.sw[data-k="'+k+'"]').getAttribute('aria-pressed')==='true';
+  const p=on('pred'),e=on('enable'),f=on('force');
+  let key='ok';
+  if(!p&&!e)key='leakEnable';
+  else if(!p&&!f)key='leakForce';
+  else if(!e)key='enable';
+  else if(!f)key='force';
+  else if(!p)key='pred';
+  const v=VERD[key];
+  lab.dataset.state=key;
+  lab.classList.toggle('leak',key==='leakEnable'||key==='leakForce');
+  vd.innerHTML='<b>'+v[0]+'</b>'+v[1]+(v[2]?'<span class="quiet">'+v[2]+'</span>':'');
+}
+lab.querySelectorAll('.sw').forEach(b=>b.addEventListener('click',()=>{
+  b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')==='true'?'false':'true');calcLab();
+}));
+calcLab();
+
+/* ---------- 附图 · 滚动驱动与重播 ---------- */
+const figIO=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){e.target.classList.add('run');figIO.unobserve(e.target);}
+}),{threshold:.22});
+document.querySelectorAll('.fig').forEach(f=>figIO.observe(f));
+document.querySelectorAll('.replay').forEach(b=>b.addEventListener('click',()=>{
+  const f=b.closest('.fig');f.classList.remove('run');void f.offsetWidth;f.classList.add('run');
+}));
+
+/* ---------- 入场 + 数字滚动 ---------- */
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.14});
+document.querySelectorAll('.cell,.d').forEach(el=>io.observe(el));
+
+const numIO=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;numIO.unobserve(e.target);
+  const cell=e.target,vEl=cell.querySelector('.v'),to=+vEl.dataset.v;
+  if(RM){vEl.textContent=to;cell.classList.add('pulse');return}
+  const t0=performance.now(),dur=900+Math.random()*260;
+  (function step(t){
+    const p=Math.min(1,(t-t0)/dur),e2=1-Math.pow(1-p,4);
+    vEl.textContent=Math.round(to*e2);
+    if(p<1)requestAnimationFrame(step);
+    else{vEl.textContent=to;cell.classList.add('pulse');setTimeout(()=>cell.classList.remove('pulse'),620)}
+  })(t0);
+}),{threshold:.5});
+document.querySelectorAll('.cell').forEach(c=>numIO.observe(c));
+
+/* ---------- 进度条 + 侧栏当前节 ---------- */
+const prog=document.getElementById('prog');
+addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+},{passive:true});
+const secIO=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting)railAdd.forEach(a=>a.classList.toggle('on',a.dataset.for===e.target.id));
+}),{rootMargin:'-42% 0px -52% 0px'});
+secs.forEach(s=>{const el=document.getElementById(s.id);if(el)secIO.observe(el)});
+</script>
+<!-- 自适应高度：仅在内嵌（iframe）时向父页上报文档高度，父页 LabEmbed 自动贴合 -->
+<script>
+(function(){
+  if(window.parent===window)return;            // 独立打开时不发
+  function send(){var h=document.documentElement.scrollHeight;parent.postMessage({type:'lab-resize',height:h},'*');}
+  window.addEventListener('load',function(){send();setTimeout(send,900);});
+  if(window.ResizeObserver){new ResizeObserver(send).observe(document.body);}
+  window.addEventListener('resize',send);
+})();
+</script>
+</body>
+</html>

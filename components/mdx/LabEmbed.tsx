@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * 交互式实验室内嵌：iframe + 顶部说明栏（标题 / 新标签打开）。
  * 用法（MDX）：<LabEmbed src="/static/lab/vdb-news-retrieval-lab-plain.html" title="检索实验·通俗版" height={860} />
@@ -5,7 +7,13 @@
  * 注意：src 传「不带 basePath」的站内路径（如 /static/lab/xxx.html），
  * 组件拼上 NEXT_PUBLIC_BASE_PATH（由 next.config.js 从 BASE_PATH 暴露，
  * GitHub Pages 项目页前缀）——原生 iframe 不会像 next/link、next/image 那样自动加前缀。
+ *
+ * 自适应高度（向后兼容）：若内嵌页面通过 postMessage 上报
+ * { type: 'lab-resize', height }（见各 lab html 末尾脚本），iframe 高度会自动贴合内容；
+ * 未上报时仍使用 height 默认值。
  */
+import { useEffect, useRef, useState } from 'react'
+
 export default function LabEmbed({
   src,
   title,
@@ -19,6 +27,20 @@ export default function LabEmbed({
 }) {
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
   const url = `${basePath}${src}`
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [frameHeight, setFrameHeight] = useState(height)
+
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== iframeRef.current?.contentWindow) return
+      const data = e.data
+      if (data && data.type === 'lab-resize' && typeof data.height === 'number') {
+        setFrameHeight(data.height)
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
 
   return (
     <div className="my-8">
@@ -36,11 +58,12 @@ export default function LabEmbed({
         </a>
       </div>
       <iframe
+        ref={iframeRef}
         src={url}
         title={title}
         loading="lazy"
         className="block w-full rounded-b-xl border border-gray-200 dark:border-gray-700"
-        style={{ height }}
+        style={{ height: frameHeight }}
       />
       {hint ? (
         <div className="mt-2 text-[12.5px] text-gray-400 dark:text-gray-500">{hint}</div>
