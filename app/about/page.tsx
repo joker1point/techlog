@@ -6,7 +6,7 @@ import { genPageMetadata } from 'app/seo'
 
 export const metadata = genPageMetadata({ title: '关于', description: 'TechLog 作者与本站定位' })
 
-const ANDROID_APK_URL = 'https://joker1point.github.io/techlog/downloads/TechLog-1.0.apk'
+const ANDROID_APK_URL = 'https://joker1point.github.io/techlog/downloads/TechLog-1.0.1.apk'
 
 export default function Page() {
   const author = allAuthors.find((p) => p.slug === 'default') as Authors
@@ -24,7 +24,7 @@ export default function Page() {
             TechLog 薄壳应用：打开即直达本站，支持网页历史返回与断网重试。
           </p>
           <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            v1.0 · 14 KB · Android 7.0（API 24）及以上
+            v1.0.1 · 14 KB · Android 7.0（API 24）及以上
           </p>
           <a
             href={ANDROID_APK_URL}
