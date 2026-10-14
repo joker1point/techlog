@@ -28,7 +28,7 @@ export default function Page() {
           </p>
           <a
             href={ANDROID_APK_URL}
-            className="mt-4 inline-flex items-center rounded-lg bg-primary-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-600 dark:hover:bg-primary-400"
+            className="bg-primary-500 hover:bg-primary-600 dark:hover:bg-primary-400 mt-4 inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
           >
             下载 APK
           </a>
