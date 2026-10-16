@@ -30,6 +30,10 @@ jobs:
       - name: 文章检查（变更 mdx：机械五项 + 新增文图文密度）
         if: ${{ github.event.inputs.skip_checks != 'true' }}
         run: python3 scripts/ci_check.py --before "${{ github.event.before }}" --after "${{ github.sha }}"
+      # 对外材料红线不加 skip_checks 逃生门：文章检查可以紧急跳过，品牌词/凭据泄漏不能
+      # （确有误报就在该行加 `public-materials: ignore` 并写清理由）。
+      - name: 对外材料红线（代理品牌词 / 凭据）
+        run: python3 tools/check_public_materials.py
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
