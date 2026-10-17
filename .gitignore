@@ -54,3 +54,7 @@ contentlayer.config.js
 .next_*/
 out_*/
 build.log
+
+# 本地笔记同步与一次性构建脚本（含本机绝对路径，不进公开仓）
+.obsidian-sync/
+build.ps1
