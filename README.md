@@ -7,7 +7,7 @@
 
 > 不知道从哪读起？站内有《TechLog 内容地图》，按系列给了阅读顺序。
 
-> **版本口径**：本仓库 fork 自 `timlrx/tailwind-nextjs-starter-blog`，`package.json` 里的版本号与 `v2.x` 标签**跟随上游模板**（表示模板版本，不是本站内容版本）。本站内容以 commit 记录为准，因此**只保留上游标签、不另建 Release**。
+> **版本口径**：本仓库 fork 自 `timlrx/tailwind-nextjs-starter-blog`，`package.json` 里的版本号**跟随上游模板**（表示模板版本，不是本站内容版本）。本站**不建 tag、不建 Release**，内容版本以 commit 记录为准——按 tag 取代码会 404，请用 `main` 或具体 commit。
 
 ## 写作范围
 
