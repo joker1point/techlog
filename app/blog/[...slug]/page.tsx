@@ -102,10 +102,25 @@ export default async function Page(props: { params: Promise<{ slug: string[] }> 
   const wc = countWords(post.body.raw || '')
   const rt = readingTime(post.body.raw || '')
   const jsonLd = post.structuredData
+  // 补齐结构化数据字段（2026-10-18）：原先只有 headline/date/description/image/url/author，
+  // 缺 mainEntityOfPage / publisher / inLanguage / keywords，author 也只有 name。
+  // 这些字段决定了文章级结构化数据能否被正确归并到站点与作者实体上。
+  const canonicalUrl = `${siteMetadata.siteUrl}/${post.path}`
+  jsonLd['mainEntityOfPage'] = { '@type': 'WebPage', '@id': canonicalUrl }
+  jsonLd['inLanguage'] = 'zh-CN'
+  if (post.tags && post.tags.length > 0) {
+    jsonLd['keywords'] = post.tags.join(',')
+  }
+  jsonLd['publisher'] = {
+    '@type': 'Person',
+    name: siteMetadata.author,
+    url: siteMetadata.siteUrl,
+  }
   jsonLd['author'] = authorDetails.map((author) => {
     return {
       '@type': 'Person',
       name: author.name,
+      url: `${siteMetadata.siteUrl}/about`,
     }
   })
 
