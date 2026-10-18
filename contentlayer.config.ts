@@ -144,16 +144,22 @@ export const Blog = defineDocumentType(() => ({
     ...computedFields,
     structuredData: {
       type: 'json',
-      resolve: (doc) => ({
-        '@context': 'https://schema.org',
-        '@type': 'BlogPosting',
-        headline: doc.title,
-        datePublished: doc.date,
-        dateModified: doc.lastmod || doc.date,
-        description: doc.summary,
-        image: doc.images ? doc.images[0] : siteMetadata.socialBanner,
-        url: `${siteMetadata.siteUrl}/${doc._raw.flattenedPath}`,
-      }),
+      resolve: (doc) => {
+        const image = doc.images ? doc.images[0] : siteMetadata.socialBanner
+        return {
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: doc.title,
+          datePublished: doc.date,
+          dateModified: doc.lastmod || doc.date,
+          description: doc.summary,
+          // JSON-LD 是原样写进页面的，不经过 Next 的 metadataBase 解析：
+          // 站内相对路径（/static/...）必须自己补成绝对 URL，否则结构化数据里
+          // 的 image 不是绝对地址，校验与抓取都会报错（2026-10-18）。
+          image: image.startsWith('http') ? image : `${siteMetadata.siteUrl}${image}`,
+          url: `${siteMetadata.siteUrl}/${doc._raw.flattenedPath}`,
+        }
+      },
     },
   },
 }))

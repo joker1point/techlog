@@ -1,3 +1,12 @@
+// 对外元信息（OG / Twitter / JSON-LD）必须用「绝对 URL」：
+// Next 的 metadataBase 会把**非绝对**的值再拼一次 metadataBase 的路径前缀，
+// 而本站 siteUrl 已经带了 /techlog —— 两者叠加就会产出
+// `https://joker1point.github.io/techlog/techlog/static/images/twitter-card.png`（404 死链）。
+// 实测：绝对 URL 会被 Next 原样透传，不会被二次拼接。所以下面统一用 siteUrl 拼绝对路径。
+// ⚠️ 例外：search.kbarConfig.searchDocumentsPath 是运行时 fetch 的站内路径，必须保留
+//    process.env.BASE_PATH 前缀，不要跟着改成绝对 URL（2026-10-18 修复双前缀死链）。
+const siteUrl = 'https://joker1point.github.io/techlog'
+
 /** @type {import("pliny/config").PlinyConfig } */
 const siteMetadata = {
   title: 'TechLog',
@@ -11,10 +20,10 @@ const siteMetadata = {
   // 都是直接拼 `siteUrl + 路径`，少了这层前缀会让所有对外链接 404。
   // 旧值是 techlog-18328.app.workbuddy.host —— 那是过期预览（文章 404），
   // canonical 指向它等于把搜索引擎的收录引向死链。
-  siteUrl: 'https://joker1point.github.io/techlog',
+  siteUrl,
   siteRepo: 'https://github.com/joker1point/techlog',
-  siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
-  socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
+  siteLogo: `${siteUrl}/static/images/logo.png`,
+  socialBanner: `${siteUrl}/static/images/twitter-card.png`,
   mastodon: '',
   email: 'birenwenmou@qq.com',
   github: 'https://github.com/joker1point',
